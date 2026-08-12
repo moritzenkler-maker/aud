@@ -1,0 +1,20 @@
+{
+  "name": "Loco Chicken – Nugget Rush",
+  "short_name": "Loco Chicken",
+  "description": "Spiele Nugget Rush, sammle Loco Coins und tausche sie gegen Gutscheine ein.",
+  "lang": "de",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14100c",
+  "theme_color": "#1b120b",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

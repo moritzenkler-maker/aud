@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Loco Chicken">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff8a3d" />
+      <stop offset="1" stop-color="#d9500c" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <ellipse cx="256" cy="300" rx="118" ry="128" fill="#fff3d6" />
+  <ellipse cx="150" cy="300" rx="30" ry="58" fill="#f0ddb6" />
+  <ellipse cx="362" cy="300" rx="30" ry="58" fill="#f0ddb6" />
+  <circle cx="216" cy="150" r="30" fill="#e23b2e" />
+  <circle cx="256" cy="128" r="34" fill="#e23b2e" />
+  <circle cx="298" cy="150" r="30" fill="#e23b2e" />
+  <path d="M256 268 L344 296 L256 324 Z" fill="#f7a51b" />
+  <circle cx="212" cy="252" r="15" fill="#20160e" />
+  <circle cx="300" cy="252" r="15" fill="#20160e" />
+  <circle cx="217" cy="247" r="5" fill="#fff" />
+  <circle cx="305" cy="247" r="5" fill="#fff" />
+  <path d="M206 420 l-24 44" stroke="#f7a51b" stroke-width="20" stroke-linecap="round" />
+  <path d="M306 420 l24 44" stroke="#f7a51b" stroke-width="20" stroke-linecap="round" />
+</svg>
