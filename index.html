@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <meta name="theme-color" content="#1b120b" />
+    <meta name="theme-color" content="#ffdd00" />
     <meta
       name="description"
       content="Loco Chicken Deutschland – spiele Nugget Rush, sammle Loco Coins und sichere dir Gutscheine."
@@ -25,7 +25,7 @@
           <div class="brand">
             <img class="brand__logo" src="./assets/icon.svg" alt="" width="40" height="40" />
             <div>
-              <p class="brand__name">LOCO CHICKEN</p>
+              <p class="brand__name">Loco Chicken</p>
               <p class="brand__claim">Deutschland</p>
             </div>
           </div>
@@ -36,7 +36,7 @@
 
         <div class="wallet">
           <span class="wallet__label">Dein Guthaben</span>
-          <p class="wallet__value"><span id="home-coins">0</span> <span class="coin">🪙</span></p>
+          <p class="wallet__value"><span id="home-coins">0</span><img class="coin-icon coin-icon--lg" src="./assets/coin.svg" alt="Loco Coins" /></p>
           <span class="wallet__hint">Loco Coins</span>
         </div>
 
@@ -49,10 +49,11 @@
         </button>
 
         <div class="hero">
+          <img class="hero__logo" src="./assets/logo.svg" alt="Loco Chicken" width="108" height="108" />
           <h1 class="hero__title">Nugget&nbsp;Rush</h1>
           <p class="hero__text">
-            Renn über die Straße, sammle Nuggets und weiche den Chilis aus. Deine Punkte werden
-            zu Loco Coins – und die zu echten Gutscheinen.
+            Renn über die Straße, schnapp dir Nuggets, Fries und Burger – und weich den Flammen
+            aus. Deine Punkte werden zu Loco Coins, deine Coins zu echten Gutscheinen.
           </p>
           <button class="button button--primary button--big" id="play-button" type="button">
             Jetzt spielen
@@ -131,10 +132,10 @@
               <span>Strecke</span><strong id="result-distance">0 m</strong>
             </div>
             <div class="result__row">
-              <span>Verdiente Coins</span><strong id="result-coins">+0 🪙</strong>
+              <span>Verdiente Coins</span><strong id="result-coins">+0</strong>
             </div>
             <div class="result__row">
-              <span>Neuer Kontostand</span><strong id="result-balance">0 🪙</strong>
+              <span>Neuer Kontostand</span><strong id="result-balance">0</strong>
             </div>
           </div>
 
@@ -152,7 +153,7 @@
       <section class="screen" id="screen-rewards" aria-label="Belohnungen">
         <header class="topbar">
           <h2 class="topbar__title">Belohnungen</h2>
-          <span class="topbar__coins"><span id="rewards-coins">0</span> 🪙</span>
+          <span class="topbar__coins"><span id="rewards-coins">0</span><img class="coin-icon" src="./assets/coin.svg" alt="Loco Coins" /></span>
         </header>
 
         <p class="section-hint">

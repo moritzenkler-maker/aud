@@ -6,6 +6,9 @@ Gutscheine ein, die im Restaurant vorgezeigt werden.
 
 Die App ist eine installierbare Web-App (PWA) ohne Build-Schritt und ohne
 Laufzeit-Abhängigkeiten – reines HTML, CSS und modernes JavaScript (ES-Module).
+Gestaltung, Spielgrafik und Icons folgen dem Marken-CI: Gelb und Rot des
+Badge-Logos, kräftige schwarze Comic-Konturen, das rot-weiße Karo der
+Verpackung und der Hahn mit Sonnenbrille als Spielfigur.
 
 ## Schnellstart
 
@@ -20,18 +23,22 @@ funktioniert wegen der ES-Module nicht).
 
 ## Das Spiel: Nugget Rush
 
-Ein Drei-Spuren-Runner. Das Huhn läuft über die Straße und muss Nuggets und
-Coins einsammeln, während es Chili-Sperren ausweicht.
+Ein Drei-Spuren-Runner: Der Loco-Hahn mit Sonnenbrille, Kamm und blauer Weste
+rennt über die Straße, sammelt Nuggets, Fries und Burger ein und weicht dabei
+den Flammen aus.
 
 - **Steuerung:** Wischen oder Tippen auf die linke/rechte Bildschirmhälfte, die
   Buttons am unteren Rand oder die Pfeiltasten bzw. `A`/`D` am Desktop.
+- **Sammeln:** Nugget 10 Punkte, Fries 25 Punkte, Loco Burger 50 Punkte.
+- **Ausweichen:** Flammen kosten ein Leben.
 - **Leben:** drei Herzen, nach einem Treffer ist das Huhn kurz unverwundbar.
 - **Combo:** Je fünf eingesammelte Objekte steigt der Multiplikator (bis x5),
   ein Treffer setzt ihn zurück.
 - **Tempo:** Die Geschwindigkeit steigt kontinuierlich bis zu einem Maximum.
 
-Alle Grafiken werden prozedural auf ein Canvas gezeichnet – es müssen keine
-Bild-Assets ausgeliefert werden.
+Alle Spielgrafiken werden prozedural auf ein Canvas gezeichnet – Straße mit
+rot-weißem Karo-Bordstein, Sammelobjekte, Flammen und die Spielfigur. Für das
+Spiel müssen keine Bilddateien ausgeliefert werden.
 
 ## Loyalty-Mechanik
 
@@ -39,7 +46,7 @@ Bild-Assets ausgeliefert werden.
 | --- | --- |
 | Coins | 10 Spielpunkte = 1 Loco Coin (wird abgerundet) |
 | Tagesbonus | +25 Coins, einmal pro Kalendertag |
-| Gutscheine | Katalog von 150 bis 1500 Coins |
+| Gutscheine | Dip (150), Fries (300), Tenders (600), Burger (900), Bucket (1500) |
 | Gültigkeit | 14 Tage ab Einlösung |
 | Code | Format `LOCO-XXXX-XXXX`, ohne verwechselbare Zeichen (I, O, 0, 1) |
 
@@ -52,8 +59,11 @@ damit derselbe Code nicht mehrfach verwendet wird.
 index.html              App-Shell mit allen Screens
 manifest.webmanifest    PWA-Manifest
 sw.js                   Service Worker (Offline-Betrieb)
-assets/icon.svg         App-Icon
-src/css/styles.css      Styles, Farben zentral als CSS-Variablen
+assets/icon.svg         App-Icon (Badge ohne Schriftzug)
+assets/logo.svg         Badge-Logo mit Schriftzug für große Flächen
+assets/coin.svg         Loco Coin
+assets/rewards/*.svg    Icons des Belohnungskatalogs
+src/css/styles.css      Styles, Marken-Werte zentral als CSS-Variablen
 src/js/app.js           Navigation, Zustand, Anbindung Spiel <-> Profil
 src/js/game.js          Spiel-Engine (Canvas, Physik, Rendering)
 src/js/economy.js       Coins, Belohnungen, Gutscheine (frei von Browser-APIs)
@@ -67,14 +77,27 @@ test/economy.test.mjs   Unit-Tests der Spiel-Ökonomie
 DOM-Zugriff. Dadurch ist sie unter Node testbar und lässt sich später
 unverändert gegen ein Backend austauschen.
 
-## Anpassung an das Corporate Design
+## Corporate Design
 
-Farben, Radien und Schatten liegen als CSS-Variablen im `:root`-Block von
-`src/css/styles.css`. Die aktuell hinterlegten Werte (Orange, Chili-Rot,
-Nugget-Gelb auf dunklem Grill-Braun) sind Platzhalter und sollten durch die
-offiziellen CI-Farben ersetzt werden; dasselbe gilt für `assets/icon.svg` und
-das Logo in der Kopfzeile. Die Farben des Spielfelds stehen im Objekt `PALETTE`
-in `src/js/game.js`.
+Die Marken-Werte liegen gesammelt im `:root`-Block von `src/css/styles.css`:
+
+| Variable | Wert | Verwendung |
+| --- | --- | --- |
+| `--red` | `#d91f26` | Logo-Ring, Buttons, Überschriften |
+| `--yellow` | `#ffdd00` | Badge-Fläche, App-Hintergrund, Coins |
+| `--ink` | `#12100e` | Konturen und Schatten (Comic-Look) |
+| `--blue` | `#2e5fa3` | Weste des Maskottchens, Truffle-Mayo-Akzent |
+| `--checker` | Kachelmuster | rot-weißes Karo der Verpackung |
+
+Die Farben des Spielfelds stehen als `PALETTE` in `src/js/game.js` und sind auf
+dieselben Werte abgestimmt.
+
+Die Dateien `assets/icon.svg` und `assets/logo.svg` sind **nachgebaute
+Annäherungen** an das Badge-Logo, damit die App ohne Zulieferung startklar ist.
+Sobald die offiziellen Logodateien vorliegen, sollten sie diese ersetzen – die
+Pfade bleiben dabei gleich. Gleiches gilt für die Hausschrift: aktuell wird eine
+fette kursive Systemschrift verwendet (`--display`), die sich an einer Stelle
+gegen die CI-Schrift tauschen lässt.
 
 Der Belohnungskatalog wird über die Konstante `REWARDS` in `src/js/economy.js`
 gepflegt. Die `id` eines Eintrags wird in bereits ausgestellten Gutscheinen

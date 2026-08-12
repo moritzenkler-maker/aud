@@ -16,6 +16,9 @@ import {
 
 const $ = (selector) => document.querySelector(selector);
 
+/** Marken-Coin als Inline-Grafik statt Emoji. */
+const COIN_ICON = '<img class="coin-icon" src="./assets/coin.svg" alt="Loco Coins" />';
+
 const SCREENS = {
   home: $('#screen-home'),
   play: $('#screen-game'),
@@ -112,14 +115,14 @@ function renderRewards() {
     const card = document.createElement('article');
     card.className = `reward${affordable ? '' : ' reward--locked'}`;
     card.innerHTML = `
-      <div class="reward__emoji" aria-hidden="true">${reward.emoji}</div>
+      <div class="reward__icon"><img src="${reward.icon}" alt="" width="34" height="34" /></div>
       <div class="reward__body">
         <p class="reward__title">${reward.title}</p>
         <p class="reward__subtitle">${reward.subtitle}</p>
       </div>
       <button class="reward__action" type="button" data-reward="${reward.id}" ${
         affordable ? '' : 'disabled'
-      }>${reward.cost} 🪙</button>
+      }>${reward.cost}${COIN_ICON}</button>
     `;
     container.appendChild(card);
   }
@@ -199,8 +202,8 @@ function handleGameOver({ score, distance }) {
 
   $('#result-score').textContent = score.toLocaleString('de-DE');
   $('#result-distance').textContent = `${distance.toLocaleString('de-DE')} m`;
-  $('#result-coins').textContent = `+${result.earned} 🪙`;
-  $('#result-balance').textContent = `${profile.coins.toLocaleString('de-DE')} 🪙`;
+  $('#result-coins').innerHTML = `+${result.earned}${COIN_ICON}`;
+  $('#result-balance').innerHTML = `${profile.coins.toLocaleString('de-DE')}${COIN_ICON}`;
   $('#result-badge').hidden = !result.isNewRecord;
 
   showScreen('over');

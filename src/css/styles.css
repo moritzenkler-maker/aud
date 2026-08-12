@@ -1,22 +1,33 @@
-/* Loco Chicken Deutschland – App-Styles
-   Mobile first, dunkles Grill-Theme. Farben sind Platzhalter und lassen sich
-   zentral über die Custom Properties an das finale CI anpassen. */
+/* Loco Chicken Deutschland – App-Styles im Marken-CI
+   Gelb/Rot des Badge-Logos, kräftige schwarze Comic-Outlines, rot-weißes
+   Karo der Verpackung. Alle Marken-Werte liegen als Custom Properties vor. */
 
 :root {
-  --bg: #14100c;
-  --bg-elevated: #201811;
-  --bg-card: #2a2018;
-  --line: #3b2e22;
-  --text: #fdf6ec;
-  --text-muted: #b7a794;
-  --primary: #ff6b1a;
-  --primary-dark: #d9500c;
-  --accent: #f7c948;
-  --danger: #e23b2e;
+  /* Markenfarben */
+  --red: #d91f26;
+  --red-dark: #a8161c;
+  --yellow: #ffdd00;
+  --yellow-dark: #f5c400;
+  --ink: #12100e;
+  --paper: #ffffff;
+  --cream: #fff6dc;
+  --blue: #2e5fa3;
+  --muted: #6b6259;
+
+  /* Comic-Look: harte Kontur plus versetzter Schatten statt Weichzeichner */
+  --border: 3px solid var(--ink);
+  --shadow: 5px 5px 0 var(--ink);
+  --shadow-sm: 3px 3px 0 var(--ink);
   --radius: 18px;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+
+  --display: 'Arial Black', 'Segoe UI Black', 'Helvetica Neue', Impact, system-ui, sans-serif;
+  --body: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+
+  /* Rot-weißes Karo wie im Chicken-Bucket */
+  --checker: repeating-conic-gradient(var(--red) 0% 25%, var(--paper) 0% 50%) 0 0 / 22px 22px;
 }
 
 * {
@@ -31,17 +42,25 @@ body {
 
 body {
   margin: 0;
-  background: radial-gradient(120% 80% at 50% 0%, #2a1a0f 0%, var(--bg) 60%);
-  color: var(--text);
-  font-family: 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--body);
   overscroll-behavior: none;
+}
+
+/* Karo-Band als Seitenabschluss unter dem Inhalt */
+body::after {
+  content: '';
+  position: fixed;
+  inset: auto 0 0 0;
+  height: 0;
 }
 
 .app {
   max-width: 520px;
   margin: 0 auto;
   min-height: 100%;
-  padding: calc(12px + var(--safe-top)) 16px calc(96px + var(--safe-bottom));
+  padding: calc(12px + var(--safe-top)) 16px calc(104px + var(--safe-bottom));
 }
 
 /* ------------------------------------------------------------- Screens */
@@ -66,6 +85,10 @@ body {
   }
 }
 
+body.is-playing {
+  background: var(--ink);
+}
+
 body.is-playing .app {
   padding: 0;
   max-width: none;
@@ -75,6 +98,16 @@ body.is-playing .tabbar {
   display: none;
 }
 
+/* -------------------------------------------------------- Überschriften */
+
+.display {
+  font-family: var(--display);
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
 /* ------------------------------------------------------------- Topbar */
 
 .topbar {
@@ -82,20 +115,26 @@ body.is-playing .tabbar {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .topbar__title {
-  font-size: 22px;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 26px;
   margin: 0;
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--ink);
 }
 
 .topbar__coins {
-  background: var(--bg-card);
-  border: 1px solid var(--line);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
   border-radius: 999px;
   padding: 8px 14px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .brand {
@@ -105,58 +144,109 @@ body.is-playing .tabbar {
 }
 
 .brand__logo {
-  border-radius: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
 }
 
 .brand__name {
   margin: 0;
-  font-weight: 800;
-  letter-spacing: 1.4px;
-  font-size: 15px;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--ink);
 }
 
 .brand__claim {
   margin: 0;
   font-size: 11px;
+  font-weight: 700;
   letter-spacing: 3px;
-  color: var(--text-muted);
   text-transform: uppercase;
+  color: var(--ink);
 }
 
 .icon-button {
-  background: var(--bg-card);
-  border: 1px solid var(--line);
-  color: var(--text);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 16px;
+  width: 44px;
+  height: 44px;
+  font-size: 17px;
   cursor: pointer;
+  flex: none;
+}
+
+.icon-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 /* -------------------------------------------------------------- Wallet */
 
 .wallet {
-  background: linear-gradient(135deg, var(--primary) 0%, #b93c07 100%);
-  border-radius: var(--radius);
-  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  background: var(--red);
+  color: var(--paper);
+  border: var(--border);
   box-shadow: var(--shadow);
-  margin-bottom: 14px;
+  border-radius: var(--radius);
+  padding: 16px 20px 18px;
+  margin-bottom: 16px;
+}
+
+/* Karo-Streifen als Verpackungs-Zitat */
+.wallet::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 11px;
+  background: var(--checker);
+  background-size: 22px 22px;
+  border-bottom: 3px solid var(--ink);
 }
 
 .wallet__label,
 .wallet__hint {
-  font-size: 12px;
+  font-size: 11px;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1.6px;
-  opacity: 0.85;
+  letter-spacing: 2px;
+}
+
+.wallet__label {
+  display: block;
+  margin-top: 12px;
 }
 
 .wallet__value {
-  margin: 6px 0 2px;
-  font-size: 40px;
-  font-weight: 800;
+  margin: 4px 0 2px;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 44px;
   line-height: 1;
+  color: var(--yellow);
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+/* ----------------------------------------------------------- Coin-Icon */
+
+.coin-icon {
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.17em;
+  margin-left: 0.3em;
+}
+
+.coin-icon--lg {
+  width: 0.88em;
+  height: 0.88em;
+  vertical-align: -0.04em;
 }
 
 /* --------------------------------------------------------- Bonus-Karte */
@@ -166,21 +256,29 @@ body.is-playing .tabbar {
   display: flex;
   align-items: center;
   gap: 14px;
-  background: var(--bg-card);
-  border: 1px dashed var(--accent);
-  color: var(--text);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
   border-radius: var(--radius);
-  padding: 14px 16px;
-  margin-bottom: 18px;
+  padding: 13px 16px;
+  margin-bottom: 16px;
   text-align: left;
   cursor: pointer;
   font: inherit;
 }
 
+.bonus-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
 .bonus-card[disabled] {
-  opacity: 0.55;
-  border-style: solid;
+  background: var(--cream);
+  opacity: 0.75;
   cursor: default;
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .bonus-card__icon {
@@ -192,33 +290,55 @@ body.is-playing .tabbar {
   flex-direction: column;
 }
 
+.bonus-card__text strong {
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 15px;
+}
+
 .bonus-card__text small {
-  color: var(--text-muted);
+  color: var(--muted);
+  font-weight: 600;
 }
 
 /* ---------------------------------------------------------------- Hero */
 
 .hero {
-  background: var(--bg-elevated);
-  border: 1px solid var(--line);
+  position: relative;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
   border-radius: var(--radius);
-  padding: 22px 20px;
+  padding: 20px;
   text-align: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.hero__logo {
+  width: 108px;
+  height: 108px;
+  margin-bottom: 6px;
 }
 
 .hero__title {
   margin: 0 0 8px;
-  font-size: 34px;
-  letter-spacing: 1px;
-  color: var(--accent);
+  font-family: var(--display);
+  font-style: italic;
   text-transform: uppercase;
+  font-size: clamp(30px, 10.5vw, 40px);
+  line-height: 0.95;
+  color: var(--yellow);
+  -webkit-text-stroke: 2px var(--ink);
+  text-shadow: 4px 4px 0 var(--red);
 }
 
 .hero__text {
-  margin: 0 0 18px;
-  color: var(--text-muted);
+  margin: 12px 0 18px;
+  color: var(--ink);
   font-size: 14px;
+  font-weight: 600;
   line-height: 1.5;
 }
 
@@ -227,46 +347,56 @@ body.is-playing .tabbar {
 .button {
   display: block;
   width: 100%;
-  border: none;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
   border-radius: 14px;
-  padding: 14px 18px;
-  font: inherit;
-  font-weight: 700;
+  padding: 13px 18px;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 15px;
+  letter-spacing: 0.5px;
   cursor: pointer;
   margin-bottom: 10px;
-  transition: transform 0.08s ease, filter 0.15s ease;
+  background: var(--paper);
+  color: var(--ink);
+  transition: transform 0.06s ease;
 }
 
 .button:active {
-  transform: scale(0.98);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 .button--primary {
-  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: #fff;
-  box-shadow: 0 8px 20px rgba(255, 107, 26, 0.28);
+  background: var(--red);
+  color: var(--paper);
 }
 
 .button--big {
-  padding: 17px 18px;
-  font-size: 17px;
+  padding: 16px 18px;
+  font-size: 20px;
 }
 
 .button--ghost {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--text);
+  background: var(--cream);
 }
 
 .button--danger-ghost {
   background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
+  border: 2px dashed var(--ink);
+  box-shadow: none;
+  color: var(--muted);
+  font-family: var(--body);
+  font-style: normal;
+  text-transform: none;
+  font-weight: 700;
+  font-size: 13px;
   margin-top: 8px;
 }
 
 .button[disabled] {
-  filter: grayscale(0.7);
+  filter: grayscale(0.6);
   opacity: 0.6;
   cursor: default;
 }
@@ -277,27 +407,30 @@ body.is-playing .tabbar {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .stat {
-  background: var(--bg-card);
-  border: 1px solid var(--line);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
   border-radius: 14px;
-  padding: 12px 8px;
+  padding: 10px 6px;
   text-align: center;
 }
 
 .stat__value {
   display: block;
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--accent);
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 24px;
+  color: var(--red);
 }
 
 .stat__label {
-  font-size: 11px;
-  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 1.2px;
 }
@@ -305,8 +438,9 @@ body.is-playing .tabbar {
 /* --------------------------------------------------------------- Panel */
 
 .panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--line);
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 16px;
@@ -314,10 +448,11 @@ body.is-playing .tabbar {
 
 .panel__title {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 16px;
   text-transform: uppercase;
-  letter-spacing: 1.4px;
-  color: var(--text-muted);
+  color: var(--red);
 }
 
 .scorelist {
@@ -329,9 +464,11 @@ body.is-playing .tabbar {
 .scorelist li {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 9px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 2px dotted #e2d9c6;
   font-size: 14px;
+  font-weight: 700;
 }
 
 .scorelist li:last-child {
@@ -339,21 +476,29 @@ body.is-playing .tabbar {
 }
 
 .scorelist__rank {
-  color: var(--accent);
-  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   margin-right: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .scorelist__empty,
 .coupons .scorelist__empty {
-  color: var(--text-muted);
+  color: var(--muted);
   font-size: 14px;
+  font-weight: 600;
   justify-content: flex-start;
 }
 
 .section-hint {
-  color: var(--text-muted);
   font-size: 14px;
+  font-weight: 700;
   margin: -6px 0 16px;
 }
 
@@ -368,26 +513,43 @@ body.is-playing .tabbar {
 .reward {
   display: flex;
   align-items: center;
-  gap: 14px;
-  background: var(--bg-card);
-  border: 1px solid var(--line);
+  gap: 12px;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 12px;
 }
 
+/* Gesperrt: erkennbar, aber weiter gut lesbar */
 .reward--locked {
-  opacity: 0.6;
+  background: var(--cream);
 }
 
-.reward__emoji {
-  font-size: 28px;
-  width: 46px;
-  height: 46px;
+.reward--locked .reward__icon {
+  filter: grayscale(0.45);
+}
+
+.reward--locked .reward__title,
+.reward--locked .reward__subtitle {
+  color: var(--muted);
+}
+
+.reward__icon {
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  background: var(--bg-elevated);
+  background: var(--yellow);
+  border: 3px solid var(--ink);
   border-radius: 12px;
   flex: none;
+}
+
+.reward__icon img {
+  width: 34px;
+  height: 34px;
+  display: block;
 }
 
 .reward__body {
@@ -397,54 +559,77 @@ body.is-playing .tabbar {
 
 .reward__title {
   margin: 0;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
   font-size: 15px;
-  font-weight: 700;
 }
 
 .reward__subtitle {
   margin: 2px 0 0;
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--muted);
 }
 
 .reward__action {
   flex: none;
-  border: none;
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
   border-radius: 12px;
-  padding: 10px 12px;
-  font: inherit;
-  font-weight: 700;
+  padding: 9px 11px;
+  font-family: var(--display);
+  font-style: italic;
   font-size: 13px;
-  background: var(--primary);
-  color: #fff;
+  background: var(--red);
+  color: var(--paper);
   cursor: pointer;
 }
 
+.reward__action:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
 .reward__action[disabled] {
-  background: var(--bg-elevated);
-  color: var(--text-muted);
+  background: #ded5c6;
+  color: var(--muted);
   cursor: default;
+  transform: none;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ----------------------------------------------------------- Gutscheine */
 
 .coupons {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .coupon {
-  border: 1px dashed var(--accent);
+  position: relative;
+  overflow: hidden;
+  border: 3px dashed var(--ink);
   border-radius: 14px;
-  padding: 12px 14px;
-  background: rgba(247, 201, 72, 0.06);
+  padding: 12px 14px 12px 22px;
+  background: var(--yellow);
+}
+
+/* Karo-Kante wie am Bucket-Papier */
+.coupon::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 11px;
+  background: var(--checker);
+  background-size: 22px 22px;
+  border-right: 3px solid var(--ink);
 }
 
 .coupon--used {
   border-style: solid;
-  border-color: var(--line);
-  background: transparent;
-  opacity: 0.6;
+  background: var(--cream);
+  opacity: 0.7;
 }
 
 .coupon__head {
@@ -455,33 +640,44 @@ body.is-playing .tabbar {
 }
 
 .coupon__title {
-  font-weight: 700;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
   font-size: 14px;
 }
 
 .coupon__code {
   font-family: 'SF Mono', 'Consolas', monospace;
-  font-size: 18px;
+  font-size: 19px;
+  font-weight: 700;
   letter-spacing: 2px;
-  color: var(--accent);
+  color: var(--red);
   margin: 8px 0 6px;
 }
 
 .coupon__meta {
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--muted);
 }
 
 .coupon__use {
   margin-top: 10px;
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--text);
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
   border-radius: 10px;
   padding: 8px 12px;
   font: inherit;
+  font-weight: 800;
   font-size: 13px;
   cursor: pointer;
+}
+
+.coupon__use:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 /* ----------------------------------------------------------- Spielview */
@@ -513,50 +709,63 @@ body.is-playing .tabbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
+  padding: 0 12px;
   pointer-events: none;
 }
 
 .hud .icon-button {
   pointer-events: auto;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
 }
 
 .hud__score {
   text-align: center;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 6px 18px;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  padding: 4px 18px;
   border-radius: 999px;
-  line-height: 1.1;
+  line-height: 1.05;
 }
 
 .hud__score span {
+  font-family: var(--display);
+  font-style: italic;
   font-size: 24px;
-  font-weight: 800;
-  color: var(--accent);
+  color: var(--red);
 }
 
 .hud__score small {
   display: block;
-  font-size: 10px;
-  color: var(--text-muted);
-  letter-spacing: 1.4px;
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 1.6px;
   text-transform: uppercase;
 }
 
 .hud__right {
-  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
   min-width: 68px;
+  padding-right: 2px;
 }
 
 .hud__combo {
-  display: block;
-  font-weight: 800;
-  color: var(--primary);
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--yellow);
+  -webkit-text-stroke: 1.5px var(--ink);
 }
 
 .hud__lives {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: -2px;
 }
 
@@ -573,25 +782,30 @@ body.is-playing .tabbar {
 }
 
 .control {
-  width: 68px;
+  width: 70px;
   height: 56px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(0, 0, 0, 0.4);
-  color: var(--text);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  background: var(--yellow);
+  color: var(--ink);
   font-size: 26px;
+  font-weight: 900;
   line-height: 1;
   cursor: pointer;
-  backdrop-filter: blur(4px);
 }
 
 .control--pause {
   width: 56px;
-  font-size: 15px;
+  font-size: 14px;
+  background: var(--paper);
 }
 
 .control:active {
-  background: rgba(255, 107, 26, 0.55);
+  background: var(--red);
+  color: var(--paper);
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
 }
 
 .overlay {
@@ -600,7 +814,7 @@ body.is-playing .tabbar {
   z-index: 4;
   display: grid;
   place-items: center;
-  background: rgba(10, 7, 4, 0.8);
+  background: rgba(18, 16, 14, 0.78);
   padding: 24px;
 }
 
@@ -609,10 +823,11 @@ body.is-playing .tabbar {
 }
 
 .overlay__box {
-  background: var(--bg-elevated);
-  border: 1px solid var(--line);
+  background: var(--yellow);
+  border: var(--border);
+  box-shadow: var(--shadow);
   border-radius: var(--radius);
-  padding: 24px;
+  padding: 22px;
   text-align: center;
   width: 100%;
   max-width: 320px;
@@ -620,70 +835,104 @@ body.is-playing .tabbar {
 
 .overlay__box h2 {
   margin: 0 0 8px;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 28px;
+  color: var(--red);
+  -webkit-text-stroke: 1px var(--ink);
 }
 
 .overlay__box p {
   margin: 0 0 18px;
-  color: var(--text-muted);
   font-size: 14px;
+  font-weight: 600;
 }
 
 /* -------------------------------------------------------------- Ergebnis */
 
 .result {
-  background: var(--bg-elevated);
-  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
   border-radius: var(--radius);
-  padding: 24px 20px;
+  padding: 20px;
   text-align: center;
   margin-top: 12px;
 }
 
+.result::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 11px;
+  background: var(--checker);
+  background-size: 22px 22px;
+  border-bottom: 3px solid var(--ink);
+}
+
 .result__badge {
   display: inline-block;
-  background: var(--accent);
-  color: #241703;
-  font-weight: 800;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
   font-size: 13px;
   padding: 6px 14px;
   border-radius: 999px;
-  margin: 0 0 12px;
+  margin: 16px 0 10px;
 }
 
 .result__title {
-  margin: 0;
-  font-size: 18px;
-  color: var(--text-muted);
-  font-weight: 600;
+  margin: 14px 0 0;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.result__badge + .result__title {
+  margin-top: 0;
 }
 
 .result__score {
   margin: 6px 0 0;
-  font-size: 56px;
-  font-weight: 800;
-  color: var(--accent);
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 60px;
   line-height: 1;
+  color: var(--yellow);
+  -webkit-text-stroke: 3px var(--ink);
+  text-shadow: 5px 5px 0 var(--red);
 }
 
 .result__label {
-  margin: 4px 0 20px;
+  margin: 10px 0 18px;
   text-transform: uppercase;
   letter-spacing: 2px;
   font-size: 11px;
-  color: var(--text-muted);
+  font-weight: 800;
+  color: var(--muted);
 }
 
 .result__rows {
   text-align: left;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .result__row {
   display: flex;
   justify-content: space-between;
   padding: 10px 0;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 2px dotted #e2d9c6;
   font-size: 14px;
+  font-weight: 700;
 }
 
 .result__row:last-child {
@@ -701,10 +950,21 @@ body.is-playing .tabbar {
   display: flex;
   justify-content: center;
   gap: 6px;
-  background: rgba(20, 16, 12, 0.94);
-  border-top: 1px solid var(--line);
+  background: var(--paper);
+  border-top: 3px solid var(--ink);
   padding: 8px 8px calc(8px + var(--safe-bottom));
-  backdrop-filter: blur(8px);
+}
+
+/* Karo-Kante oberhalb der Navigation */
+.tabbar::before {
+  content: '';
+  position: absolute;
+  inset: -14px 0 auto 0;
+  height: 11px;
+  background: var(--checker);
+  background-size: 22px 22px;
+  border-top: 3px solid var(--ink);
+  border-bottom: 3px solid var(--ink);
 }
 
 .tab {
@@ -712,9 +972,12 @@ body.is-playing .tabbar {
   max-width: 160px;
   background: none;
   border: none;
-  color: var(--text-muted);
-  font: inherit;
+  color: var(--muted);
+  font-family: var(--body);
   font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -728,7 +991,7 @@ body.is-playing .tabbar {
 }
 
 .tab--active {
-  color: var(--primary);
+  color: var(--red);
 }
 
 /* ---------------------------------------------------------------- Toast */
@@ -736,17 +999,17 @@ body.is-playing .tabbar {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(90px + var(--safe-bottom));
+  bottom: calc(96px + var(--safe-bottom));
   transform: translateX(-50%);
   z-index: 10;
-  background: var(--bg-card);
-  border: 1px solid var(--accent);
-  color: var(--text);
+  background: var(--ink);
+  border: 3px solid var(--ink);
+  color: var(--yellow);
   padding: 12px 18px;
   border-radius: 999px;
   font-size: 14px;
-  font-weight: 600;
-  box-shadow: var(--shadow);
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
   animation: toast-in 0.25s ease;
   max-width: calc(100% - 32px);
   text-align: center;
