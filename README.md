@@ -1,7 +1,7 @@
 # Loco Chicken Deutschland – Gaming App
 
 Mobile Gaming- und Loyalty-App für Loco Chicken Deutschland: Gäste spielen
-**Nugget Rush**, verdienen dabei **Loco Coins** und tauschen diese gegen
+**Loco Fryer**, verdienen dabei **Loco Coins** und tauschen diese gegen
 Gutscheine ein, die im Restaurant vorgezeigt werden.
 
 Die App ist eine installierbare Web-App (PWA) ohne Build-Schritt und ohne
@@ -22,34 +22,84 @@ Für Node ab Version 20. Alternativ genügt jeder statische Webserver, der das
 Projektverzeichnis ausliefert (ein Öffnen der `index.html` per `file://`
 funktioniert wegen der ES-Module nicht).
 
-## Das Spiel: Nugget Rush
+## Das Spiel: Loco Fryer
 
-Ein Drei-Spuren-Runner: Der Loco-Hahn mit Sonnenbrille, Kamm und blauer Weste
-rennt über die Straße, sammelt Nuggets, Fries und Burger ein und weicht dabei
-den Flammen aus.
+Ein Timing-Spiel an der Fritteuse. In sechs Körben garen Nuggets, Tenders und
+Keulen vor sich hin. Jedes Teil hat einen Garring, der sich füllt – und kurz
+bevor er voll ist, leuchtet ein schmaler goldener Abschnitt auf. Genau dann
+muss gezogen werden.
 
-- **Steuerung:** Wischen oder Tippen auf die linke/rechte Bildschirmhälfte, die
-  Buttons am unteren Rand oder die Pfeiltasten bzw. `A`/`D` am Desktop.
-- **Sammeln:** Nugget 10 Punkte, Fries 25 Punkte, Loco Burger 50 Punkte.
-- **Ausweichen:** Flammen kosten ein Leben.
-- **Leben:** drei Herzen, nach einem Treffer ist das Huhn kurz unverwundbar.
-- **Combo:** Je fünf eingesammelte Objekte steigt der Multiplikator (bis x5),
-  ein Treffer setzt ihn zurück.
-- **Tempo:** Die Geschwindigkeit steigt kontinuierlich bis zu einem Maximum.
+| Zeitpunkt | Folge |
+| --- | --- |
+| Im goldenen Fenster | **Perfekt**: 100 Punkte × Combo, Combo steigt (bis x10) |
+| Vorher, ab halb gar | **Gut**: 20 Punkte × Combo, Combo bleibt stehen |
+| Zu früh | Teil ist hin, Combo fällt auf x1 zurück |
+| Zu spät | **Verbrannt**: ein Strike – nach dreien ist die Schicht vorbei |
 
-Alle Spielgrafiken werden prozedural auf ein Canvas gezeichnet – Straße mit
-rot-weißem Karo-Bordstein, Sammelobjekte, Flammen und die Spielfigur. Für das
-Spiel müssen keine Bilddateien ausgeliefert werden.
+Fünf perfekte Züge in Folge geben zusätzlich 500 Punkte („Heiß!").
+
+Zwei Entscheidungen machen das Spiel schwer und dadurch reizvoll: Der goldene
+Moment liegt direkt vor dem Verbrennen, Warten bringt also Punkte und Risiko
+zugleich. Und die drei Teilesorten garen unterschiedlich schnell, weshalb
+blindes Mitzählen nicht funktioniert. Wildes Dauertippen wird bestraft, weil
+jedes zu früh gezogene Teil die Combo zerstört.
+
+Mit jedem servierten Teil wird es schneller: Die Garzeit sinkt von 3,4 auf
+1,6 Sekunden, der Nachschub kommt dichter, und das goldene Fenster schrumpft
+von 18 % auf 7,5 % der Garzeit.
+
+- **Steuerung:** Teil antippen. Am Desktop wahlweise die Tasten 1–6.
+- **Alle Stellschrauben** stehen als Konstanten am Anfang von `src/js/game.js`.
+
+Sämtliche Grafik wird prozedural auf ein Canvas gezeichnet – Edelstahlwand,
+Karo-Streifen, brodelndes Öl, Garringe und die Teile in jedem Garzustand.
 
 ## Loyalty-Mechanik
 
+Die Ökonomie ist bewusst streng ausgelegt: Ein Gutschein soll ein Grund zum
+Wiederkommen sein, kein Automatismus.
+
 | Element | Regel |
 | --- | --- |
-| Coins | 10 Spielpunkte = 1 Loco Coin (wird abgerundet) |
-| Tagesbonus | +25 Coins, einmal pro Kalendertag |
-| Gutscheine | Dip (150), Fries (300), Tenders (600), Burger (900), Bucket (1500) |
+| Coins | 2.000 Spielpunkte = 1 Loco Coin (wird abgerundet) |
+| Tagesobergrenze | höchstens 20 erspielte Coins pro Kalendertag |
+| Tagesbonus | +5 Coins fürs Reinschauen (zählt nicht gegen die Obergrenze) |
+| Offene Gutscheine | nur einer gleichzeitig |
 | Gültigkeit | 14 Tage ab Einlösung |
 | Code | Format `LOCO-XXXX-XXXX`, ohne verwechselbare Zeichen (I, O, 0, 1) |
+
+### Belohnungen
+
+| Belohnung | Coins | Bedingung |
+| --- | --- | --- |
+| Dip nach Wahl | 100 | zu jeder Bestellung |
+| Loco Fries | 200 | ab 10 € Bestellwert |
+| 4 Chicken Tenders | 350 | ab 15 € Bestellwert |
+| Loco Burger für 1 € | 600 | ab 15 € Bestellwert |
+| 20 % auf den Bucket | 900 | ab 25 € Bestellwert |
+
+### Warum der Laden dabei nicht draufzahlt
+
+Vier Bremsen greifen ineinander:
+
+1. **Punkte gibt es nur für Können.** Spielzeit allein bringt nichts – Punkte
+   entstehen ausschließlich durch perfekt getroffene Züge. Eine Anfängerrunde
+   liegt bei ein paar hundert Punkten, eine sehr gute bei einigen tausend.
+2. **Hoher Umrechnungskurs.** 2.000 Punkte pro Coin. Eine durchschnittliche
+   Runde bringt 1–3 Coins.
+3. **Tagesobergrenze.** Mehr als 20 erspielte Coins pro Tag sind nicht
+   möglich, Dauergrinden lohnt also nicht. Punkte und Rekorde zählen weiter,
+   nur Coins nicht.
+4. **Mindestbestellwert.** Außer dem Dip hängt jede Belohnung an einem
+   Bestellwert – hinter jedem eingelösten Gutschein steht Umsatz.
+
+In der Praxis heißt das: Wer fast täglich spielt, kommt nach etwa einer Woche
+zum ersten Dip; die großen Belohnungen brauchen mehrere Wochen. Wer nur
+gelegentlich spielt, entsprechend länger.
+
+Zum Nachjustieren genügen die Konstanten am Anfang von `src/js/economy.js`
+(`POINTS_PER_COIN`, `DAILY_COIN_CAP`, `DAILY_BONUS_COINS`,
+`MAX_ACTIVE_COUPONS`) sowie die `cost`- und `minOrder`-Werte im Katalog.
 
 Ein Gutschein kann in der App als „im Restaurant eingelöst" entwertet werden,
 damit derselbe Code nicht mehrfach verwendet wird.
@@ -66,7 +116,7 @@ assets/coin.svg         Loco Coin
 assets/rewards/*.svg    Icons des Belohnungskatalogs
 src/css/styles.css      Styles, Marken-Werte zentral als CSS-Variablen
 src/js/app.js           Navigation, Zustand, Anbindung Spiel <-> Profil
-src/js/game.js          Spiel-Engine (Canvas, Physik, Rendering)
+src/js/game.js          Spiel "Loco Fryer" (Canvas, Timing, Rendering)
 src/js/economy.js       Coins, Belohnungen, Gutscheine (frei von Browser-APIs)
 src/js/storage.js       Persistenz im localStorage
 src/js/audio.js         synthetisierte Sounds via Web Audio API
@@ -124,6 +174,9 @@ Gutscheine liegen im `localStorage` des Geräts (Schlüssel
 synchronisiert noch manipulationssicher.
 
 ## Nächste Schritte
+
+- Ökonomie nach den ersten Wochen anhand echter Zahlen nachjustieren
+  (eingelöste Gutscheine je aktivem Gast, Anteil abgelaufener Codes)
 
 - Backend mit Nutzerkonto, damit Coins geräteübergreifend gelten
 - Serverseitige Ausstellung und Prüfung der Gutscheincodes (inklusive

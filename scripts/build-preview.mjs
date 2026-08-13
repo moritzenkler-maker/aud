@@ -85,7 +85,7 @@ async function build() {
     .replace(/\s*<script type="module"[^>]*><\/script>/, '')
     .trim();
 
-  const page = `<title>Nugget Rush</title>
+  const page = `<title>Loco Fryer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
 <!-- Automatisch erzeugt von scripts/build-preview.mjs – nicht von Hand ändern. -->

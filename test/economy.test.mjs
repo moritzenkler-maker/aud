@@ -4,6 +4,9 @@ import assert from 'node:assert/strict';
 import {
   COUPON_VALID_DAYS,
   DAILY_BONUS_COINS,
+  DAILY_COIN_CAP,
+  MAX_ACTIVE_COUPONS,
+  POINTS_PER_COIN,
   activeCoupons,
   applyGameResult,
   canClaimDailyBonus,
@@ -14,33 +17,66 @@ import {
   isCouponExpired,
   markCouponUsed,
   redeemReward,
+  remainingDailyCoins,
 } from '../src/js/economy.js';
 
 test('coinsForScore rundet ab und ignoriert ungültige Werte', () => {
   assert.equal(coinsForScore(0), 0);
-  assert.equal(coinsForScore(9), 0);
-  assert.equal(coinsForScore(10), 1);
-  assert.equal(coinsForScore(1234), 123);
+  assert.equal(coinsForScore(POINTS_PER_COIN - 1), 0);
+  assert.equal(coinsForScore(POINTS_PER_COIN), 1);
+  assert.equal(coinsForScore(POINTS_PER_COIN * 3.5), 3);
   assert.equal(coinsForScore(-50), 0);
   assert.equal(coinsForScore(Number.NaN), 0);
 });
 
 test('applyGameResult schreibt Coins gut und erkennt den Rekord', () => {
   const start = createProfile();
+  const score = POINTS_PER_COIN * 5;
 
-  const first = applyGameResult(start, 250);
-  assert.equal(first.earned, 25);
+  const first = applyGameResult(start, score);
+  assert.equal(first.earned, 5);
   assert.equal(first.isNewRecord, true);
-  assert.equal(first.profile.coins, 25);
-  assert.equal(first.profile.highScore, 250);
+  assert.equal(first.profile.coins, 5);
+  assert.equal(first.profile.highScore, score);
   assert.equal(first.profile.gamesPlayed, 1);
   // Ursprüngliches Profil bleibt unverändert.
   assert.equal(start.coins, 0);
 
-  const second = applyGameResult(first.profile, 100);
+  const second = applyGameResult(first.profile, POINTS_PER_COIN * 2);
   assert.equal(second.isNewRecord, false);
-  assert.equal(second.profile.highScore, 250);
-  assert.equal(second.profile.coins, 35);
+  assert.equal(second.profile.highScore, score);
+  assert.equal(second.profile.coins, 7);
+});
+
+test('die Tagesobergrenze deckelt erspielte Coins und setzt sich täglich zurück', () => {
+  const monday = new Date('2026-08-10T10:00:00');
+  const mondayLater = new Date('2026-08-10T20:00:00');
+  const tuesday = new Date('2026-08-11T10:00:00');
+
+  const start = createProfile();
+  assert.equal(remainingDailyCoins(start, monday), DAILY_COIN_CAP);
+
+  // Eine übergroße Runde bringt höchstens das Tageslimit.
+  const huge = applyGameResult(start, POINTS_PER_COIN * (DAILY_COIN_CAP + 8), monday);
+  assert.equal(huge.gross, DAILY_COIN_CAP + 8);
+  assert.equal(huge.earned, DAILY_COIN_CAP);
+  assert.equal(huge.cappedAway, 8);
+  assert.equal(huge.profile.coins, DAILY_COIN_CAP);
+  assert.equal(remainingDailyCoins(huge.profile, monday), 0);
+
+  // Weiterspielen am selben Tag bringt keine Coins mehr.
+  const again = applyGameResult(huge.profile, POINTS_PER_COIN * 4, mondayLater);
+  assert.equal(again.earned, 0);
+  assert.equal(again.cappedAway, 4);
+  assert.equal(again.profile.coins, DAILY_COIN_CAP);
+  // Punkte und Rekorde zählen trotzdem weiter.
+  assert.equal(again.profile.gamesPlayed, 2);
+
+  // Am nächsten Tag steht das volle Kontingent wieder bereit.
+  assert.equal(remainingDailyCoins(again.profile, tuesday), DAILY_COIN_CAP);
+  const nextDay = applyGameResult(again.profile, POINTS_PER_COIN * 3, tuesday);
+  assert.equal(nextDay.earned, 3);
+  assert.equal(nextDay.profile.coins, DAILY_COIN_CAP + 3);
 });
 
 test('Bestenliste ist sortiert und auf zehn Einträge begrenzt', () => {
@@ -76,11 +112,11 @@ test('Tagesbonus lässt sich pro Kalendertag genau einmal abholen', () => {
 });
 
 test('redeemReward prüft Guthaben und erzeugt einen gültigen Gutschein', () => {
-  const poor = { ...createProfile(), coins: 100 };
+  const poor = { ...createProfile(), coins: 20 };
   const failed = redeemReward(poor, 'dip');
   assert.equal(failed.ok, false);
   assert.equal(failed.error, 'insufficient-coins');
-  assert.equal(failed.profile.coins, 100);
+  assert.equal(failed.profile.coins, 20);
 
   const unknown = redeemReward({ ...createProfile(), coins: 9999 }, 'gibt-es-nicht');
   assert.equal(unknown.ok, false);
@@ -90,7 +126,7 @@ test('redeemReward prüft Guthaben und erzeugt einen gültigen Gutschein', () =>
   const rich = { ...createProfile(), coins: 500 };
   const success = redeemReward(rich, 'dip', { now });
   assert.equal(success.ok, true);
-  assert.equal(success.profile.coins, 350);
+  assert.equal(success.profile.coins, 400);
   assert.equal(success.profile.coupons.length, 1);
   assert.match(success.coupon.code, /^LOCO-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
 
@@ -106,6 +142,26 @@ test('generateCouponCode nutzt nur eindeutige Zeichen', () => {
   // Leicht verwechselbare Zeichen (I, O, 0, 1) kommen in den Blöcken nicht vor.
   const blocks = generateCouponCode().slice('LOCO-'.length);
   assert.doesNotMatch(blocks, /[IO01]/);
+});
+
+test('es bleibt immer nur ein Gutschein gleichzeitig offen', () => {
+  const now = new Date('2026-08-12T12:00:00Z');
+  const rich = { ...createProfile(), coins: 5000 };
+
+  const first = redeemReward(rich, 'dip', { now });
+  assert.equal(first.ok, true);
+  assert.equal(activeCoupons(first.profile, now).length, MAX_ACTIVE_COUPONS);
+
+  // Solange der Gutschein offen ist, geht kein zweiter heraus.
+  const blocked = redeemReward(first.profile, 'fries', { now });
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.error, 'coupon-limit');
+  assert.equal(blocked.profile.coins, first.profile.coins);
+
+  // Nach dem Entwerten ist der Weg wieder frei.
+  const used = markCouponUsed(first.profile, first.coupon.code).profile;
+  const second = redeemReward(used, 'fries', { now });
+  assert.equal(second.ok, true);
 });
 
 test('markCouponUsed entwertet einen Gutschein nur einmal', () => {

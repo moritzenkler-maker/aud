@@ -234,6 +234,13 @@ body.is-playing .tabbar {
   -webkit-text-stroke: 2px var(--ink);
 }
 
+.wallet__daily {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--yellow);
+}
+
 /* ----------------------------------------------------------- Coin-Icon */
 
 .coin-icon {
@@ -502,6 +509,46 @@ body.is-playing .tabbar {
   margin: -6px 0 16px;
 }
 
+/* -------------------------------------------------------------- Regeln */
+
+.rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.rules li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.rules__dot {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+}
+
+.rules__dot--gold {
+  background: var(--yellow);
+}
+
+.rules__dot--pale {
+  background: #f4e0b4;
+}
+
+.rules__dot--burnt {
+  background: #2f2620;
+}
+
 /* --------------------------------------------------------- Belohnungen */
 
 .rewards {
@@ -570,6 +617,24 @@ body.is-playing .tabbar {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
+}
+
+/* Mindestbestellwert – gehört sichtbar an die Belohnung, nicht ins Kleingedruckte */
+.reward__terms {
+  margin: 5px 0 0;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: var(--yellow);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.reward--locked .reward__terms {
+  background: #e6ddcd;
 }
 
 .reward__action {
@@ -749,10 +814,13 @@ body.is-playing .tabbar {
 .hud__right {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 5px;
-  min-width: 68px;
-  padding-right: 2px;
+  align-items: center;
+  gap: 6px;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  border-radius: 14px;
+  padding: 6px 10px;
 }
 
 .hud__combo {
@@ -760,30 +828,55 @@ body.is-playing .tabbar {
   font-style: italic;
   font-size: 20px;
   line-height: 1;
-  color: var(--yellow);
-  -webkit-text-stroke: 1.5px var(--ink);
+  color: var(--red);
 }
 
-.hud__lives {
-  font-size: 14px;
-  letter-spacing: -2px;
+.hud__strikes {
+  display: flex;
+  gap: 5px;
+}
+
+/* Drei Marken: gelb = frei, rot = verbrannt */
+.strike {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+}
+
+.strike--used {
+  background: var(--red);
 }
 
 .controls {
   position: absolute;
-  bottom: calc(18px + var(--safe-bottom));
+  bottom: calc(16px + var(--safe-bottom));
   left: 0;
   right: 0;
   z-index: 3;
   display: flex;
-  justify-content: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   padding: 0 16px;
+}
+
+.controls__hint {
+  margin: 0;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
 }
 
 .control {
   width: 70px;
-  height: 56px;
+  height: 48px;
   border-radius: 16px;
   border: 3px solid var(--ink);
   box-shadow: var(--shadow-sm);
@@ -937,6 +1030,21 @@ body.is-playing .tabbar {
 
 .result__row:last-child {
   border-bottom: none;
+}
+
+.result__note {
+  margin: -8px 0 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--cream);
+  border: 2px dashed var(--ink);
+  border-radius: 12px;
+  padding: 9px 12px;
+}
+
+.result__note[hidden] {
+  display: none;
 }
 
 /* --------------------------------------------------------------- Tabbar */

@@ -9,9 +9,9 @@
     <meta name="theme-color" content="#ffdd00" />
     <meta
       name="description"
-      content="Loco Chicken Deutschland – spiele Nugget Rush, sammle Loco Coins und sichere dir Gutscheine."
+      content="Loco Chicken Deutschland – spiele Loco Fryer, sammle Loco Coins und sichere dir Gutscheine."
     />
-    <title>Loco Chicken – Nugget Rush</title>
+    <title>Loco Chicken – Loco Fryer</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
@@ -38,6 +38,7 @@
           <span class="wallet__label">Dein Guthaben</span>
           <p class="wallet__value"><span id="home-coins">0</span><img class="coin-icon coin-icon--lg" src="./assets/coin.svg" alt="Loco Coins" /></p>
           <span class="wallet__hint">Loco Coins</span>
+          <p class="wallet__daily" id="wallet-daily"></p>
         </div>
 
         <button class="bonus-card" id="bonus-button" type="button">
@@ -50,10 +51,10 @@
 
         <div class="hero">
           <img class="hero__logo" src="./assets/logo.svg" alt="Loco Chicken" width="108" height="108" />
-          <h1 class="hero__title">Nugget&nbsp;Rush</h1>
+          <h1 class="hero__title">Loco&nbsp;Fryer</h1>
           <p class="hero__text">
-            Renn über die Straße, schnapp dir Nuggets, Fries und Burger – und weich den Flammen
-            aus. Deine Punkte werden zu Loco Coins, deine Coins zu echten Gutscheinen.
+            Du stehst an der Fritteuse. Zieh jedes Teil im goldenen Moment heraus – kurz bevor
+            es verbrennt. Perfektes Timing zahlt sich aus, Ungeduld nicht.
           </p>
           <button class="button button--primary button--big" id="play-button" type="button">
             Jetzt spielen
@@ -76,6 +77,21 @@
         </div>
 
         <section class="panel">
+          <h2 class="panel__title">So geht's</h2>
+          <ul class="rules">
+            <li><span class="rules__dot rules__dot--gold"></span>
+              <strong>Perfekt:</strong> Ring leuchtet golden – volle Punkte, Combo steigt.
+            </li>
+            <li><span class="rules__dot rules__dot--pale"></span>
+              <strong>Zu früh:</strong> wenige Punkte, die Combo fällt auf x1 zurück.
+            </li>
+            <li><span class="rules__dot rules__dot--burnt"></span>
+              <strong>Verbrannt:</strong> Ring läuft voll – dreimal und die Schicht ist vorbei.
+            </li>
+          </ul>
+        </section>
+
+        <section class="panel">
           <h2 class="panel__title">Deine besten Runden</h2>
           <ol class="scorelist" id="score-list">
             <li class="scorelist__empty">Noch keine Runde gespielt.</li>
@@ -95,7 +111,7 @@
           </div>
           <div class="hud__right">
             <span class="hud__combo" id="hud-combo">x1</span>
-            <span class="hud__lives" id="hud-lives">❤️❤️❤️</span>
+            <span class="hud__strikes" id="hud-strikes"></span>
           </div>
         </div>
 
@@ -111,11 +127,10 @@
         </div>
 
         <div class="controls">
-          <button class="control" id="control-left" type="button" aria-label="Nach links">‹</button>
+          <p class="controls__hint">Tippe das Teil, wenn der Ring golden leuchtet</p>
           <button class="control control--pause" id="pause-button" type="button" aria-label="Pause">
             ❚❚
           </button>
-          <button class="control" id="control-right" type="button" aria-label="Nach rechts">›</button>
         </div>
       </section>
 
@@ -129,7 +144,7 @@
 
           <div class="result__rows">
             <div class="result__row">
-              <span>Strecke</span><strong id="result-distance">0 m</strong>
+              <span>Perfekt gezogen</span><strong id="result-perfects">0</strong>
             </div>
             <div class="result__row">
               <span>Verdiente Coins</span><strong id="result-coins">+0</strong>
@@ -137,6 +152,7 @@
             <div class="result__row">
               <span>Neuer Kontostand</span><strong id="result-balance">0</strong>
             </div>
+            <p class="result__note" id="result-note" hidden></p>
           </div>
 
           <button class="button button--primary button--big" id="again-button" type="button">

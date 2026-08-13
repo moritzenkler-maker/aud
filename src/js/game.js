@@ -1,57 +1,84 @@
 /**
- * "Nugget Rush" – das Kernspiel der Loco Chicken App.
+ * "Loco Fryer" – das Kernspiel der Loco Chicken App.
  *
- * Ein Drei-Spuren-Runner: Der Loco-Hahn rennt über die Straße, sammelt
- * Nuggets, Fries und Burger und weicht den Flammen aus. Gezeichnet wird alles
- * prozedural auf einem Canvas im Marken-Look (kräftiges Rot/Gelb, schwarze
- * Comic-Konturen, rot-weißes Karo) – es werden keine Bild-Assets benötigt.
+ * Timing-Spiel an der Fritteuse: Hähnchenteile fallen in die Körbe und garen
+ * vor sich hin. Wer im schmalen goldenen Moment zieht, bekommt "Perfekt" und
+ * baut die Combo aus. Wer zu früh zieht, verliert die Combo. Wer zu spät
+ * zieht, verbrennt das Teil – dreimal verbrannt und die Schicht ist vorbei.
+ *
+ * Der goldene Moment liegt bewusst direkt vor dem Verbrennen: Warten bringt
+ * Punkte und Risiko zugleich. Punkte gibt es ausschließlich für Können, nicht
+ * für Spielzeit – deshalb sind hohe Ergebnisse selten und Coins entsprechend
+ * wertvoll.
+ *
+ * Gezeichnet wird prozedural auf einem Canvas im Marken-Look.
  */
 
 import { sfx } from './audio.js';
 
-const LANES = 3;
 const VIRTUAL_WIDTH = 360;
-const ROAD_MARGIN = 30;
-const PLAYER_SIZE = 52;
-const START_SPEED = 240;
-const MAX_SPEED = 620;
-const SPEED_RAMP = 9; // Pixel pro Sekunde, die pro Sekunde dazukommen
-const START_LIVES = 3;
-const INVULNERABLE_TIME = 1.6;
-const COMBO_STEP = 5; // Sammelobjekte bis zur nächsten Multiplikator-Stufe
-const MAX_COMBO = 5;
+const SLOT_COLUMNS = 2;
+const SLOT_ROWS = 3;
+const SLOT_COUNT = SLOT_COLUMNS * SLOT_ROWS;
+const START_STRIKES = 3;
 
-/** Punktwerte der Sammelobjekte. */
-const ITEM_POINTS = {
-  nugget: 10,
-  fries: 25,
-  burger: 50,
-};
+/* Punktwerte -------------------------------------------------------------- */
+
+const PERFECT_POINTS = 100;
+const GOOD_POINTS = 20;
+const HOT_STREAK_BONUS = 500; // alle fünf Perfekt-Treffer in Folge
+const HOT_STREAK_STEP = 5;
+const MAX_COMBO = 10;
+
+/* Schwierigkeitskurve ------------------------------------------------------
+ * `ramp` läuft von 0 (Rundenstart) bis 1 (ab RAMP_PIECES servierten Teilen).
+ * Alles wird dazwischen linear interpoliert.                                */
+
+const RAMP_PIECES = 45;
+const COOK_TIME = { start: 3.4, end: 1.6 };
+const SPAWN_INTERVAL = { start: 1.5, end: 0.6 };
+const PERFECT_WINDOW = { start: 0.18, end: 0.075 };
+const GOOD_ZONE_START = 0.5; // ab hier ist ein Teil essbar, davor roh
 
 /** Markenfarben – Gegenstück zu den CSS-Variablen in styles.css. */
 const PALETTE = {
   ink: '#12100e',
   red: '#d91f26',
-  redDark: '#a8161c',
   yellow: '#ffdd00',
   yellowDark: '#f5c400',
   paper: '#ffffff',
-  road: '#2a2723',
-  roadLine: '#ffffff',
-  chicken: '#c47a33',
-  chickenDark: '#9a5a22',
-  vest: '#2e5fa3',
-  beak: '#f5c400',
-  nugget: '#f0a827',
-  nuggetDark: '#c87d15',
-  bun: '#e0a75a',
-  cheese: '#f7b731',
-  orange: '#ff8a1e',
+  oil: '#3d2b16',
+  oilDark: '#2a1d0f',
+  basket: '#8a8f96',
+  steel: '#c9ced4',
+  basketDark: '#5f656c',
+  raw: '#f4e0b4',
+  golden: '#eda52f',
+  deep: '#b4651a',
+  burnt: '#2f2620',
+  green: '#43a047',
 };
 
-const randomLane = () => Math.floor(Math.random() * LANES);
+/** Die drei Teile garen unterschiedlich schnell – reine Rhythmus-Routine
+ *  reicht dadurch nicht aus. */
+const PIECE_TYPES = [
+  { id: 'nugget', cookFactor: 0.85 },
+  { id: 'wing', cookFactor: 1 },
+  { id: 'tender', cookFactor: 1.18 },
+];
 
-export default class NuggetRush {
+const lerp = (from, to, t) => from + (to - from) * t;
+
+/** Mischt zwei Hex-Farben; `t` läuft von 0 bis 1. */
+function mixColor(from, to, t) {
+  const parse = (hex) => [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16));
+  const [r1, g1, b1] = parse(from);
+  const [r2, g2, b2] = parse(to);
+  const channel = (a, b) => Math.round(lerp(a, b, Math.max(0, Math.min(1, t))));
+  return `rgb(${channel(r1, r2)},${channel(g1, g2)},${channel(b1, b2)})`;
+}
+
+export default class LocoFryer {
   /**
    * @param {HTMLCanvasElement} canvas
    * @param {{onUpdate?: Function, onGameOver?: Function}} handlers
@@ -73,13 +100,11 @@ export default class NuggetRush {
     this.onResize = this.onResize.bind(this);
     this.onKeyDown = this.onKeyDown.bind(this);
     this.onPointerDown = this.onPointerDown.bind(this);
-    this.onPointerUp = this.onPointerUp.bind(this);
     this.loop = this.loop.bind(this);
 
     window.addEventListener('resize', this.onResize);
     window.addEventListener('keydown', this.onKeyDown);
     canvas.addEventListener('pointerdown', this.onPointerDown);
-    canvas.addEventListener('pointerup', this.onPointerUp);
 
     this.reset();
     this.onResize();
@@ -89,18 +114,19 @@ export default class NuggetRush {
 
   reset() {
     this.score = 0;
-    this.lives = START_LIVES;
-    this.speed = START_SPEED;
-    this.distance = 0;
+    this.strikes = 0;
     this.combo = 1;
-    this.collectedSinceCombo = 0;
-    this.invulnerable = 0;
+    this.perfectStreak = 0;
+    this.perfects = 0;
+    this.served = 0;
+    this.spawnTimer = 0.6;
+    this.time = 0;
     this.shake = 0;
-    this.spawnTimer = 0;
-    this.entities = [];
+    this.flash = 0;
+    this.slots = Array.from({ length: SLOT_COUNT }, () => null);
     this.particles = [];
-    this.lane = 1;
-    this.playerX = this.laneCenter(1);
+    this.popups = [];
+    this.bubbles = Array.from({ length: 26 }, () => this.createBubble(true));
     this.gameOver = false;
   }
 
@@ -118,8 +144,24 @@ export default class NuggetRush {
     this.vh = (VIRTUAL_WIDTH * cssHeight) / cssWidth;
     this.scale = (cssWidth * dpr) / VIRTUAL_WIDTH;
 
-    this.playerY = this.vh - 120;
+    this.layout();
     if (!this.running) this.draw();
+  }
+
+  /** Legt Fritteuse und Korbraster für die aktuelle Höhe fest. */
+  layout() {
+    const top = Math.max(96, this.vh * 0.16);
+    const bottom = this.vh - Math.max(120, this.vh * 0.14);
+    this.basin = { x: 22, y: top, width: this.vw - 44, height: Math.max(240, bottom - top) };
+
+    const cellWidth = this.basin.width / SLOT_COLUMNS;
+    const cellHeight = this.basin.height / SLOT_ROWS;
+    this.slotRadius = Math.min(cellWidth, cellHeight) * 0.34;
+
+    this.slotPositions = Array.from({ length: SLOT_COUNT }, (unused, index) => ({
+      x: this.basin.x + cellWidth * (0.5 + (index % SLOT_COLUMNS)),
+      y: this.basin.y + cellHeight * (0.5 + Math.floor(index / SLOT_COLUMNS)),
+    }));
   }
 
   destroy() {
@@ -127,7 +169,6 @@ export default class NuggetRush {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keydown', this.onKeyDown);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
-    this.canvas.removeEventListener('pointerup', this.onPointerUp);
   }
 
   /* -------------------------------------------------------------- Ablauf */
@@ -173,120 +214,166 @@ export default class NuggetRush {
     this.frame = requestAnimationFrame(this.loop);
   }
 
+  /* ------------------------------------------------------- Schwierigkeit */
+
+  get ramp() {
+    return Math.min(1, this.served / RAMP_PIECES);
+  }
+
+  get perfectWindow() {
+    return lerp(PERFECT_WINDOW.start, PERFECT_WINDOW.end, this.ramp);
+  }
+
   /* -------------------------------------------------------------- Update */
 
   update(dt) {
-    this.speed = Math.min(MAX_SPEED, this.speed + SPEED_RAMP * dt);
-    this.distance += this.speed * dt;
-    this.score += this.speed * dt * 0.05;
-
-    if (this.invulnerable > 0) this.invulnerable -= dt;
+    this.time += dt;
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt * 4);
-
-    // Sanfte Bewegung zur Zielspur.
-    const targetX = this.laneCenter(this.lane);
-    this.playerX += (targetX - this.playerX) * Math.min(1, dt * 14);
+    if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 3);
 
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      this.spawnRow();
-      // Je schneller das Spiel, desto dichter die Reihen.
-      this.spawnTimer = Math.max(0.42, 260 / this.speed);
+      this.spawnPiece();
+      this.spawnTimer = lerp(SPAWN_INTERVAL.start, SPAWN_INTERVAL.end, this.ramp);
     }
 
-    for (const entity of this.entities) {
-      entity.y += this.speed * dt;
-      entity.spin += dt * 3;
+    for (const [index, piece] of this.slots.entries()) {
+      if (!piece) continue;
+      piece.elapsed += dt;
+      piece.progress = piece.elapsed / piece.cookTime;
+      if (piece.progress > 1) this.burn(index);
     }
-
-    this.checkCollisions();
-    this.entities = this.entities.filter((entity) => entity.y < this.vh + 60 && !entity.dead);
 
     for (const particle of this.particles) {
       particle.life -= dt;
       particle.x += particle.vx * dt;
-      particle.y += particle.vy * dt + this.speed * dt * 0.5;
-      particle.vy += 420 * dt;
+      particle.y += particle.vy * dt;
+      particle.vy += particle.gravity * dt;
     }
     this.particles = this.particles.filter((particle) => particle.life > 0);
+
+    for (const popup of this.popups) {
+      popup.life -= dt;
+      popup.y -= 34 * dt;
+    }
+    this.popups = this.popups.filter((popup) => popup.life > 0);
+
+    for (const bubble of this.bubbles) {
+      bubble.y -= bubble.speed * dt;
+      bubble.x += Math.sin(this.time * bubble.wobble) * 6 * dt;
+      if (bubble.y < this.basin.y) Object.assign(bubble, this.createBubble(false));
+    }
 
     this.emitUpdate();
   }
 
-  spawnRow() {
-    // Mindestens eine Spur bleibt immer frei.
-    const freeLane = randomLane();
-    for (let lane = 0; lane < LANES; lane += 1) {
-      if (lane === freeLane) continue;
-      const roll = Math.random();
-      if (roll < 0.34) {
-        this.entities.push(this.createEntity('flame', lane));
-      } else if (roll < 0.4) {
-        this.entities.push(this.createEntity('burger', lane));
-      } else if (roll < 0.54) {
-        this.entities.push(this.createEntity('fries', lane));
-      } else if (roll < 0.84) {
-        this.entities.push(this.createEntity('nugget', lane));
-      }
-    }
-  }
-
-  createEntity(type, lane) {
+  createBubble(spread) {
+    const basin = this.basin ?? { x: 22, y: 100, width: VIRTUAL_WIDTH - 44, height: 300 };
     return {
-      type,
-      lane,
-      x: this.laneCenter(lane),
-      y: -50 - Math.random() * 40,
-      size: type === 'flame' ? 44 : 32,
-      spin: Math.random() * Math.PI,
-      dead: false,
+      x: basin.x + Math.random() * basin.width,
+      y: basin.y + (spread ? Math.random() : 1) * basin.height,
+      radius: 1.5 + Math.random() * 3,
+      speed: 14 + Math.random() * 26,
+      wobble: 1 + Math.random() * 3,
     };
   }
 
-  checkCollisions() {
-    for (const entity of this.entities) {
-      if (entity.dead || entity.lane !== this.lane) continue;
+  spawnPiece() {
+    const free = this.slots.flatMap((piece, index) => (piece ? [] : [index]));
+    // Alle Körbe belegt: Der Gast muss erst abarbeiten, es kommt nichts nach.
+    if (free.length === 0) return;
 
-      const dy = Math.abs(entity.y - this.playerY);
-      const hitRange = (entity.size + PLAYER_SIZE) * 0.4;
-      if (dy > hitRange) continue;
+    const slot = free[Math.floor(Math.random() * free.length)];
+    const type = PIECE_TYPES[Math.floor(Math.random() * PIECE_TYPES.length)];
 
-      if (entity.type === 'flame') {
-        if (this.invulnerable > 0) continue;
-        this.takeHit(entity);
-      } else {
-        this.collect(entity);
-      }
-    }
+    this.slots[slot] = {
+      type: type.id,
+      cookTime: lerp(COOK_TIME.start, COOK_TIME.end, this.ramp) * type.cookFactor,
+      elapsed: 0,
+      progress: 0,
+      spin: Math.random() * Math.PI,
+      dropped: 0,
+    };
+    sfx.sizzle();
   }
 
-  collect(entity) {
-    entity.dead = true;
-    this.score += (ITEM_POINTS[entity.type] ?? ITEM_POINTS.nugget) * this.combo;
+  /* --------------------------------------------------------- Interaktion */
 
-    this.collectedSinceCombo += 1;
-    if (this.collectedSinceCombo >= COMBO_STEP && this.combo < MAX_COMBO) {
-      this.combo += 1;
-      this.collectedSinceCombo = 0;
-      sfx.bonus();
+  /** Zieht das Teil aus einem Korb und wertet den Zeitpunkt aus. */
+  pull(slotIndex) {
+    if (!this.running || this.paused || this.gameOver) return;
+    const piece = this.slots[slotIndex];
+    if (!piece) return;
+
+    const position = this.slotPositions[slotIndex];
+    const perfectFrom = 1 - this.perfectWindow;
+
+    if (piece.progress >= perfectFrom) {
+      this.scorePerfect(slotIndex, position);
+    } else if (piece.progress >= GOOD_ZONE_START) {
+      this.scoreGood(slotIndex, position);
     } else {
-      sfx.collect();
+      this.scoreRaw(slotIndex, position);
     }
-
-    this.burst(entity.x, entity.y, entity.type === 'nugget' ? PALETTE.nugget : PALETTE.yellow, 10);
   }
 
-  takeHit(entity) {
-    entity.dead = true;
-    this.lives -= 1;
-    this.combo = 1;
-    this.collectedSinceCombo = 0;
-    this.invulnerable = INVULNERABLE_TIME;
-    this.shake = 1;
-    this.burst(entity.x, entity.y, PALETTE.red, 16);
-    sfx.hit();
+  scorePerfect(slotIndex, position) {
+    this.slots[slotIndex] = null;
+    this.served += 1;
+    this.perfects += 1;
+    this.perfectStreak += 1;
 
-    if (this.lives <= 0) this.endGame();
+    this.score += PERFECT_POINTS * this.combo;
+    this.popup(position, 'PERFEKT!', PALETTE.yellow, 1.25);
+    this.burst(position, PALETTE.yellow, 18, 210);
+    this.flash = 0.6;
+    sfx.perfect(this.combo);
+
+    if (this.combo < MAX_COMBO) this.combo += 1;
+
+    if (this.perfectStreak > 0 && this.perfectStreak % HOT_STREAK_STEP === 0) {
+      this.score += HOT_STREAK_BONUS;
+      this.popup({ x: position.x, y: position.y - 26 }, `HEISS! +${HOT_STREAK_BONUS}`, PALETTE.red, 1.1);
+      this.burst(position, PALETTE.red, 22, 260);
+      sfx.hotStreak();
+    }
+  }
+
+  scoreGood(slotIndex, position) {
+    this.slots[slotIndex] = null;
+    this.served += 1;
+    // Brauchbar, aber kein Ausbau der Combo – nur Perfekt treibt die Runde.
+    this.score += GOOD_POINTS * this.combo;
+    this.perfectStreak = 0;
+    this.popup(position, 'gut', PALETTE.paper, 0.9);
+    this.burst(position, PALETTE.golden, 8, 140);
+    sfx.good();
+  }
+
+  scoreRaw(slotIndex, position) {
+    this.slots[slotIndex] = null;
+    this.served += 1;
+    // Zu früh gezogen: Das Teil ist hin, die Combo fällt zurück.
+    this.combo = 1;
+    this.perfectStreak = 0;
+    this.popup(position, 'zu früh!', PALETTE.paper, 0.95);
+    this.burst(position, PALETTE.raw, 8, 130);
+    sfx.raw();
+  }
+
+  burn(slotIndex) {
+    const position = this.slotPositions[slotIndex];
+    this.slots[slotIndex] = null;
+    this.served += 1;
+    this.strikes += 1;
+    this.combo = 1;
+    this.perfectStreak = 0;
+    this.shake = 1;
+    this.popup(position, 'VERBRANNT', PALETTE.red, 1.1);
+    this.smoke(position);
+    sfx.burnt();
+
+    if (this.strikes >= START_STRIKES) this.endGame();
   }
 
   endGame() {
@@ -295,76 +382,83 @@ export default class NuggetRush {
     sfx.gameOver();
     this.handlers.onGameOver?.({
       score: Math.floor(this.score),
-      distance: Math.floor(this.distance / 10),
+      perfects: this.perfects,
+      served: this.served,
     });
-  }
-
-  burst(x, y, color, count) {
-    for (let i = 0; i < count; i += 1) {
-      this.particles.push({
-        x,
-        y,
-        vx: (Math.random() - 0.5) * 260,
-        vy: (Math.random() - 0.8) * 220,
-        life: 0.4 + Math.random() * 0.3,
-        color,
-        size: 3 + Math.random() * 3,
-      });
-    }
   }
 
   emitUpdate() {
     this.handlers.onUpdate?.({
       score: Math.floor(this.score),
-      lives: this.lives,
+      strikes: this.strikes,
       combo: this.combo,
-      distance: Math.floor(this.distance / 10),
+      perfects: this.perfects,
     });
   }
 
-  /* ------------------------------------------------------------ Steuerung */
+  /* --------------------------------------------------------------- Juice */
 
-  laneCenter(lane) {
-    const usable = this.vw - ROAD_MARGIN * 2;
-    return ROAD_MARGIN + (usable / LANES) * (lane + 0.5);
+  popup(position, text, color, size) {
+    this.popups.push({ x: position.x, y: position.y, text, color, size, life: 0.85 });
   }
 
-  move(direction) {
-    if (!this.running || this.paused || this.gameOver) return;
-    const next = Math.min(LANES - 1, Math.max(0, this.lane + direction));
-    if (next !== this.lane) {
-      this.lane = next;
-      sfx.ui();
+  burst(position, color, count, speed) {
+    for (let i = 0; i < count; i += 1) {
+      const angle = Math.random() * Math.PI * 2;
+      const power = speed * (0.35 + Math.random() * 0.65);
+      this.particles.push({
+        x: position.x,
+        y: position.y,
+        vx: Math.cos(angle) * power,
+        vy: Math.sin(angle) * power,
+        gravity: 420,
+        life: 0.4 + Math.random() * 0.35,
+        size: 2.5 + Math.random() * 3.5,
+        color,
+      });
+    }
+  }
+
+  smoke(position) {
+    for (let i = 0; i < 14; i += 1) {
+      this.particles.push({
+        x: position.x + (Math.random() - 0.5) * 18,
+        y: position.y,
+        vx: (Math.random() - 0.5) * 40,
+        vy: -40 - Math.random() * 60,
+        gravity: -20,
+        life: 0.6 + Math.random() * 0.5,
+        size: 5 + Math.random() * 7,
+        color: '#6b625a',
+      });
+    }
+  }
+
+  /* ------------------------------------------------------------- Eingabe */
+
+  onPointerDown(event) {
+    if (!this.running || this.paused) return;
+    const rect = this.canvas.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * this.vw;
+    const y = ((event.clientY - rect.top) / rect.width) * this.vw;
+
+    for (const [index, position] of this.slotPositions.entries()) {
+      const distance = Math.hypot(position.x - x, position.y - y);
+      // Großzügiger Trefferbereich – gefragt ist Timing, nicht Zielgenauigkeit.
+      if (distance <= this.slotRadius * 1.55) {
+        this.pull(index);
+        return;
+      }
     }
   }
 
   onKeyDown(event) {
-    if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-      this.move(-1);
-      event.preventDefault();
-    } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-      this.move(1);
+    // Tasten 1-6 entsprechen den Körben von links oben nach rechts unten.
+    const index = Number.parseInt(event.key, 10) - 1;
+    if (Number.isInteger(index) && index >= 0 && index < SLOT_COUNT) {
+      this.pull(index);
       event.preventDefault();
     }
-  }
-
-  onPointerDown(event) {
-    this.pointerStart = { x: event.clientX, y: event.clientY, time: performance.now() };
-  }
-
-  onPointerUp(event) {
-    if (!this.pointerStart) return;
-    const dx = event.clientX - this.pointerStart.x;
-    const elapsed = performance.now() - this.pointerStart.time;
-    this.pointerStart = null;
-
-    // Wischen bewegt in Wischrichtung, ein Tippen bewegt zur getippten Seite.
-    if (Math.abs(dx) > 24 && elapsed < 600) {
-      this.move(dx > 0 ? 1 : -1);
-      return;
-    }
-    const rect = this.canvas.getBoundingClientRect();
-    this.move(event.clientX - rect.left < rect.width / 2 ? -1 : 1);
   }
 
   /* --------------------------------------------------------------- Render */
@@ -376,347 +470,239 @@ export default class NuggetRush {
     ctx.lineCap = 'round';
 
     if (this.shake > 0) {
-      const amount = this.shake * 5;
+      const amount = this.shake * 6;
       ctx.translate((Math.random() - 0.5) * amount, (Math.random() - 0.5) * amount);
     }
 
-    this.drawRoad(ctx);
-    for (const entity of this.entities) this.drawEntity(ctx, entity);
+    this.drawKitchen(ctx);
+    this.drawBasin(ctx);
+    for (const [index, piece] of this.slots.entries()) this.drawSlot(ctx, index, piece);
     this.drawParticles(ctx);
-    this.drawPlayer(ctx);
+    this.drawPopups(ctx);
+
+    if (this.flash > 0) {
+      ctx.globalAlpha = this.flash * 0.16;
+      ctx.fillStyle = PALETTE.yellow;
+      ctx.fillRect(0, 0, this.vw, this.vh);
+      ctx.globalAlpha = 1;
+    }
   }
 
-  /** Kontur im Comic-Stil der Marke. */
   outline(ctx, width = 3) {
     ctx.strokeStyle = PALETTE.ink;
     ctx.lineWidth = width;
     ctx.stroke();
   }
 
-  drawRoad(ctx) {
-    // Gelber Markenhintergrund neben der Fahrbahn
+  drawKitchen(ctx) {
     ctx.fillStyle = PALETTE.yellow;
     ctx.fillRect(0, 0, this.vw, this.vh);
 
-    ctx.fillStyle = PALETTE.road;
-    ctx.fillRect(ROAD_MARGIN, 0, this.vw - ROAD_MARGIN * 2, this.vh);
-
-    // Rot-weißer Karo-Bordstein wie das Papier im Chicken-Bucket
-    const tile = 12;
-    const offset = this.distance % (tile * 2);
-    for (let y = -tile * 2 + offset, row = 0; y < this.vh; y += tile, row += 1) {
-      for (const [index, x] of [ROAD_MARGIN - tile, this.vw - ROAD_MARGIN].entries()) {
-        ctx.fillStyle = (row + index) % 2 === 0 ? PALETTE.red : PALETTE.paper;
-        ctx.fillRect(x, y, tile, tile);
-      }
+    // Edelstahl-Rückwand: ruhige Fläche, damit HUD und Körbe die Bühne haben
+    const wallHeight = this.basin.y - 30;
+    ctx.fillStyle = PALETTE.steel;
+    ctx.fillRect(0, 0, this.vw, wallHeight);
+    ctx.strokeStyle = 'rgba(0,0,0,0.10)';
+    ctx.lineWidth = 2;
+    for (let y = 12; y < wallHeight; y += 14) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(this.vw, y);
+      ctx.stroke();
     }
 
-    ctx.strokeStyle = PALETTE.ink;
-    ctx.lineWidth = 3;
+    // Karo-Streifen als Marken-Zitat direkt über der Fritteuse
+    const tile = 12;
+    for (let x = 0, column = 0; x < this.vw; x += tile, column += 1) {
+      ctx.fillStyle = column % 2 === 0 ? PALETTE.red : PALETTE.paper;
+      ctx.fillRect(x, wallHeight, tile, tile);
+    }
+    ctx.fillStyle = PALETTE.ink;
+    ctx.fillRect(0, wallHeight - 3, this.vw, 3);
+    ctx.fillRect(0, wallHeight + tile, this.vw, 3);
+  }
+
+  drawBasin(ctx) {
+    const { x, y, width, height } = this.basin;
+
+    // Stahlrahmen
+    ctx.fillStyle = PALETTE.basketDark;
+    this.roundedRect(ctx, x - 10, y - 10, width + 20, height + 20, 20);
+    ctx.fill();
+    this.outline(ctx, 4);
+
+    // Öl
+    ctx.fillStyle = PALETTE.oil;
+    this.roundedRect(ctx, x, y, width, height, 14);
+    ctx.fill();
+    this.outline(ctx, 3);
+
+    ctx.save();
+    this.roundedRect(ctx, x, y, width, height, 14);
+    ctx.clip();
+
+    for (const bubble of this.bubbles) {
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = PALETTE.yellowDark;
+      ctx.beginPath();
+      ctx.arc(bubble.x, bubble.y, bubble.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  drawSlot(ctx, index, piece) {
+    const { x, y } = this.slotPositions[index];
+    const radius = this.slotRadius;
+
+    // Korbmulde
+    ctx.fillStyle = PALETTE.oilDark;
     ctx.beginPath();
-    ctx.moveTo(ROAD_MARGIN, 0);
-    ctx.lineTo(ROAD_MARGIN, this.vh);
-    ctx.moveTo(ROAD_MARGIN - tile, 0);
-    ctx.lineTo(ROAD_MARGIN - tile, this.vh);
-    ctx.moveTo(this.vw - ROAD_MARGIN, 0);
-    ctx.lineTo(this.vw - ROAD_MARGIN, this.vh);
-    ctx.moveTo(this.vw - ROAD_MARGIN + tile, 0);
-    ctx.lineTo(this.vw - ROAD_MARGIN + tile, this.vh);
+    ctx.arc(x, y, radius * 1.16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = PALETTE.basket;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Fahrbahnmarkierung
-    const stripeHeight = 42;
-    const gap = 34;
-    const stripeOffset = this.distance % (stripeHeight + gap);
-    ctx.fillStyle = PALETTE.roadLine;
-    for (let lane = 1; lane < LANES; lane += 1) {
-      const x = ROAD_MARGIN + ((this.vw - ROAD_MARGIN * 2) / LANES) * lane;
-      for (let y = -stripeHeight + stripeOffset; y < this.vh; y += stripeHeight + gap) {
-        ctx.fillRect(x - 2.5, y, 5, stripeHeight);
-      }
-    }
-  }
+    if (!piece) return;
 
-  drawEntity(ctx, entity) {
-    if (entity.type === 'nugget') this.drawNugget(ctx, entity);
-    else if (entity.type === 'fries') this.drawFries(ctx, entity);
-    else if (entity.type === 'burger') this.drawBurger(ctx, entity);
-    else this.drawFlame(ctx, entity);
-  }
+    const perfectFrom = 1 - this.perfectWindow;
+    const inPerfect = piece.progress >= perfectFrom;
 
-  drawNugget(ctx, entity) {
-    const size = entity.size;
-    ctx.save();
-    ctx.translate(entity.x, entity.y);
-    ctx.rotate(Math.sin(entity.spin) * 0.2);
+    // Garring: dunkle Rille, goldene Zielzone, heller Zeiger obenauf
+    const ringRadius = radius * 1.38;
 
-    ctx.fillStyle = PALETTE.nugget;
+    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
+    ctx.lineWidth = 9;
     ctx.beginPath();
-    ctx.moveTo(-size / 2, -size / 5);
-    ctx.quadraticCurveTo(-size / 2.4, -size / 2, 0, -size / 2.4);
-    ctx.quadraticCurveTo(size / 2.2, -size / 2.2, size / 2, -size / 6);
-    ctx.quadraticCurveTo(size / 2.2, size / 2.4, 0, size / 2.6);
-    ctx.quadraticCurveTo(-size / 2.4, size / 2.4, -size / 2, -size / 5);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx);
+    ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
 
-    ctx.fillStyle = PALETTE.nuggetDark;
+    ctx.strokeStyle = PALETTE.yellow;
+    ctx.lineWidth = 9;
     ctx.beginPath();
-    ctx.arc(-4, 2, 2.4, 0, Math.PI * 2);
-    ctx.arc(5, -3, 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
+    ctx.arc(x, y, ringRadius, this.angle(perfectFrom), this.angle(1));
+    ctx.stroke();
 
-  drawFries(ctx, entity) {
-    const size = entity.size;
-    ctx.save();
-    ctx.translate(entity.x, entity.y);
-    ctx.rotate(Math.sin(entity.spin) * 0.12);
+    ctx.strokeStyle = inPerfect ? PALETTE.paper : mixColor(PALETTE.green, PALETTE.red, piece.progress);
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(x, y, ringRadius, this.angle(0), this.angle(Math.min(piece.progress, 1)));
+    ctx.stroke();
 
-    // Pommes
-    ctx.fillStyle = PALETTE.yellowDark;
-    for (const [index, offsetX] of [-9, -3, 3, 9].entries()) {
-      const height = 15 + (index % 2) * 5;
-      this.roundedRect(ctx, offsetX - 3, -size / 2 - height + 14, 6, height, 2);
+    if (inPerfect) {
+      // Pulsierender Hof, damit der goldene Moment nicht zu übersehen ist
+      const pulse = 0.5 + Math.sin(this.time * 22) * 0.5;
+      ctx.globalAlpha = 0.25 + pulse * 0.35;
+      ctx.fillStyle = PALETTE.yellow;
+      ctx.beginPath();
+      ctx.arc(x, y, ringRadius + 4 + pulse * 3, 0, Math.PI * 2);
       ctx.fill();
-      this.outline(ctx, 2);
+      ctx.globalAlpha = 1;
     }
 
-    // Rote Box
-    ctx.fillStyle = PALETTE.red;
-    ctx.beginPath();
-    ctx.moveTo(-size / 2.2, 0);
-    ctx.lineTo(size / 2.2, 0);
-    ctx.lineTo(size / 2.8, size / 2);
-    ctx.lineTo(-size / 2.8, size / 2);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx);
-
-    ctx.fillStyle = PALETTE.yellow;
-    ctx.fillRect(-size / 2.6, size / 8, size / 1.3, 4);
-    ctx.restore();
+    this.drawPiece(ctx, piece, x, y, radius);
   }
 
-  drawBurger(ctx, entity) {
-    const size = entity.size;
-    const width = size * 1.05;
-    ctx.save();
-    ctx.translate(entity.x, entity.y);
-    ctx.rotate(Math.sin(entity.spin) * 0.1);
-
-    // Unteres Bun
-    ctx.fillStyle = PALETTE.bun;
-    this.roundedRect(ctx, -width / 2, 4, width, 9, 4);
-    ctx.fill();
-    this.outline(ctx);
-
-    // Patty
-    ctx.fillStyle = PALETTE.nuggetDark;
-    this.roundedRect(ctx, -width / 2 - 1, -3, width + 2, 8, 3);
-    ctx.fill();
-    this.outline(ctx);
-
-    // Käse
-    ctx.fillStyle = PALETTE.cheese;
-    ctx.beginPath();
-    ctx.moveTo(-width / 2 - 2, -3);
-    ctx.lineTo(width / 2 + 2, -3);
-    ctx.lineTo(width / 2 - 2, 3);
-    ctx.lineTo(-width / 2 + 2, 3);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx, 2);
-
-    // Oberes Bun
-    ctx.fillStyle = PALETTE.bun;
-    ctx.beginPath();
-    ctx.moveTo(-width / 2, -3);
-    ctx.quadraticCurveTo(-width / 2, -size / 1.6, 0, -size / 1.6);
-    ctx.quadraticCurveTo(width / 2, -size / 1.6, width / 2, -3);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx);
-    ctx.restore();
+  /** Winkel auf dem Garring, Start oben. */
+  angle(progress) {
+    return -Math.PI / 2 + progress * Math.PI * 2;
   }
 
-  drawFlame(ctx, entity) {
-    const size = entity.size;
-    const flicker = 1 + Math.sin(entity.spin * 3) * 0.08;
+  /**
+   * Farbe nach Garzustand: blass -> golden -> kräftig gebräunt.
+   * Im perfekten Moment sieht das Teil bewusst am appetitlichsten aus –
+   * schwarz wird es erst beim Verbrennen, und das ist dann ohnehin vorbei.
+   */
+  pieceColor(progress) {
+    if (progress < 0.55) return mixColor(PALETTE.raw, PALETTE.golden, progress / 0.55);
+    return mixColor(PALETTE.golden, PALETTE.deep, (progress - 0.55) / 0.45);
+  }
+
+  drawPiece(ctx, piece, x, y, radius) {
+    const color = this.pieceColor(piece.progress);
+    const wobble = Math.sin(this.time * 6 + piece.spin) * 0.08;
+
     ctx.save();
-    ctx.translate(entity.x, entity.y);
-    ctx.scale(1, flicker);
+    ctx.translate(x, y);
+    ctx.rotate(wobble);
+    ctx.fillStyle = color;
 
-    ctx.fillStyle = PALETTE.red;
-    ctx.beginPath();
-    ctx.moveTo(0, -size / 1.7);
-    ctx.quadraticCurveTo(size / 2.1, -size / 6, size / 3, size / 4);
-    ctx.quadraticCurveTo(size / 5, size / 2, 0, size / 2);
-    ctx.quadraticCurveTo(-size / 5, size / 2, -size / 3, size / 4);
-    ctx.quadraticCurveTo(-size / 2.1, -size / 6, 0, -size / 1.7);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx);
+    if (piece.type === 'nugget') {
+      const size = radius * 1.85;
+      ctx.beginPath();
+      ctx.moveTo(-size / 2, -size / 5);
+      ctx.quadraticCurveTo(-size / 2.4, -size / 2, 0, -size / 2.4);
+      ctx.quadraticCurveTo(size / 2.2, -size / 2.2, size / 2, -size / 6);
+      ctx.quadraticCurveTo(size / 2.2, size / 2.4, 0, size / 2.6);
+      ctx.quadraticCurveTo(-size / 2.4, size / 2.4, -size / 2, -size / 5);
+      ctx.closePath();
+      ctx.fill();
+      this.outline(ctx);
+    } else if (piece.type === 'tender') {
+      const width = radius * 1.05;
+      const height = radius * 2.15;
+      this.roundedRect(ctx, -width / 2, -height / 2, width, height, width / 2);
+      ctx.fill();
+      this.outline(ctx);
+    } else {
+      // Keule: Fleisch mit kurzem Knochen und Knauf
+      const boneTip = { x: radius * 0.72, y: -radius * 0.74 };
+      ctx.save();
+      ctx.strokeStyle = PALETTE.ink;
+      ctx.lineWidth = 13;
+      ctx.beginPath();
+      ctx.moveTo(radius * 0.3, -radius * 0.28);
+      ctx.lineTo(boneTip.x, boneTip.y);
+      ctx.stroke();
+      ctx.strokeStyle = '#f7f1e0';
+      ctx.lineWidth = 7;
+      ctx.stroke();
 
-    ctx.fillStyle = PALETTE.orange;
-    ctx.beginPath();
-    ctx.moveTo(0, -size / 5);
-    ctx.quadraticCurveTo(size / 4.5, size / 8, size / 8, size / 3);
-    ctx.quadraticCurveTo(0, size / 2.2, -size / 8, size / 3);
-    ctx.quadraticCurveTo(-size / 4.5, size / 8, 0, -size / 5);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx, 2);
+      ctx.fillStyle = '#f7f1e0';
+      ctx.beginPath();
+      ctx.arc(boneTip.x, boneTip.y, radius * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      this.outline(ctx);
+      ctx.restore();
 
-    ctx.fillStyle = PALETTE.yellow;
-    ctx.beginPath();
-    ctx.ellipse(0, size / 4, size / 12, size / 8, 0, 0, Math.PI * 2);
-    ctx.fill();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.ellipse(0, radius * 0.2, radius * 0.82, radius * 0.72, 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      this.outline(ctx);
+    }
+
     ctx.restore();
   }
 
   drawParticles(ctx) {
     for (const particle of this.particles) {
-      ctx.globalAlpha = Math.max(0, particle.life * 2);
+      ctx.globalAlpha = Math.max(0, Math.min(1, particle.life * 2));
       ctx.fillStyle = particle.color;
-      ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
-      ctx.strokeStyle = PALETTE.ink;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(particle.x, particle.y, particle.size, particle.size);
+      ctx.beginPath();
+      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.globalAlpha = 1;
   }
 
-  /** Der Loco-Hahn: Sonnenbrille, roter Kamm, blaue Weste. */
-  drawPlayer(ctx) {
-    // Blinken während der Unverwundbarkeit nach einem Treffer.
-    if (this.invulnerable > 0 && Math.floor(this.invulnerable * 12) % 2 === 0) return;
-
-    const x = this.playerX;
-    const y = this.playerY;
-    const tilt = (x - this.laneCenter(this.lane)) * -0.012;
-    const bob = Math.sin(this.distance / 22) * 3;
-
-    ctx.save();
-    ctx.translate(x, y + bob);
-    ctx.rotate(tilt);
-
-    // Schatten (vor der Figurenskalierung, damit er flach am Boden bleibt)
-    ctx.globalAlpha = 0.22;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(0, PLAYER_SIZE / 2 + 8, PLAYER_SIZE / 2.2, 6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
-
-    // Die Figur wird etwas größer gezeichnet als ihre Trefferfläche –
-    // das wirkt kräftiger und verzeiht knappe Ausweichmanöver.
-    ctx.scale(1.32, 1.32);
-
-    // Beine
-    const legSwing = Math.sin(this.distance / 12) * 5;
-    ctx.strokeStyle = PALETTE.ink;
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(-6, PLAYER_SIZE / 4);
-    ctx.lineTo(-6 + legSwing, PLAYER_SIZE / 2 + 2);
-    ctx.moveTo(6, PLAYER_SIZE / 4);
-    ctx.lineTo(6 - legSwing, PLAYER_SIZE / 2 + 2);
-    ctx.stroke();
-    ctx.strokeStyle = PALETTE.beak;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(-6, PLAYER_SIZE / 4);
-    ctx.lineTo(-6 + legSwing, PLAYER_SIZE / 2 + 2);
-    ctx.moveTo(6, PLAYER_SIZE / 4);
-    ctx.lineTo(6 - legSwing, PLAYER_SIZE / 2 + 2);
-    ctx.stroke();
-
-    // Körper
-    ctx.fillStyle = PALETTE.chicken;
-    ctx.beginPath();
-    ctx.ellipse(0, 10, 15, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-    this.outline(ctx);
-
-    // Weißes Shirt
-    ctx.fillStyle = PALETTE.paper;
-    ctx.beginPath();
-    ctx.ellipse(0, 12, 7, 11, 0, 0, Math.PI * 2);
-    ctx.fill();
-    this.outline(ctx, 2);
-
-    // Blaue Weste
-    ctx.fillStyle = PALETTE.vest;
-    for (const side of [-1, 1]) {
-      ctx.beginPath();
-      ctx.moveTo(side * 5, 1);
-      ctx.quadraticCurveTo(side * 17, 4, side * 13, 19);
-      ctx.quadraticCurveTo(side * 8, 23, side * 5, 20);
-      ctx.closePath();
-      ctx.fill();
-      this.outline(ctx, 2);
+  drawPopups(ctx) {
+    ctx.textAlign = 'center';
+    for (const popup of this.popups) {
+      const fade = Math.min(1, popup.life * 2.4);
+      const size = 20 * popup.size;
+      ctx.globalAlpha = fade;
+      ctx.font = `italic 900 ${size}px 'Arial Black', 'Segoe UI', Impact, sans-serif`;
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = PALETTE.ink;
+      ctx.strokeText(popup.text, popup.x, popup.y);
+      ctx.fillStyle = popup.color;
+      ctx.fillText(popup.text, popup.x, popup.y);
     }
-
-    // Kamm – wird vor dem Kopf gezeichnet und sitzt dadurch fest auf ihm
-    ctx.fillStyle = PALETTE.red;
-    ctx.beginPath();
-    ctx.moveTo(-10, -22);
-    ctx.quadraticCurveTo(-13, -33, -4, -30);
-    ctx.quadraticCurveTo(-3, -39, 5, -33);
-    ctx.quadraticCurveTo(12, -37, 11, -23);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx);
-
-    // Kopf
-    ctx.fillStyle = PALETTE.chicken;
-    ctx.beginPath();
-    ctx.ellipse(0, -12, 17, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-    this.outline(ctx);
-
-    // Sonnenbrille – schmaler als der Kopf, damit die Kontur sichtbar bleibt
-    ctx.fillStyle = PALETTE.ink;
-    this.roundedRect(ctx, -13, -20, 26, 4, 2);
-    ctx.fill();
-    this.roundedRect(ctx, -12.5, -18, 11, 9, 3);
-    ctx.fill();
-    this.roundedRect(ctx, 1.5, -18, 11, 9, 3);
-    ctx.fill();
-
-    // Glanzpunkte auf den Gläsern
-    ctx.fillStyle = 'rgba(255,255,255,0.45)';
-    ctx.fillRect(-10.5, -16.5, 3, 3);
-    ctx.fillRect(3.5, -16.5, 3, 3);
-
-    // Schnabel mit Grinsen
-    ctx.fillStyle = PALETTE.beak;
-    ctx.beginPath();
-    ctx.moveTo(-9, -6);
-    ctx.quadraticCurveTo(0, 4, 9, -6);
-    ctx.quadraticCurveTo(0, -10, -9, -6);
-    ctx.closePath();
-    ctx.fill();
-    this.outline(ctx, 2);
-
-    ctx.fillStyle = PALETTE.paper;
-    ctx.beginPath();
-    ctx.moveTo(-6.5, -4.5);
-    ctx.quadraticCurveTo(0, 1.5, 6.5, -4.5);
-    ctx.closePath();
-    ctx.fill();
-
-    // Kehllappen seitlich unter dem Schnabel
-    ctx.fillStyle = PALETTE.red;
-    ctx.beginPath();
-    ctx.ellipse(-6, 2, 3, 4, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-    this.outline(ctx, 2);
-
-    ctx.restore();
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'start';
   }
 
   roundedRect(ctx, x, y, width, height, radius) {

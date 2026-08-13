@@ -1,17 +1,21 @@
 /** App-Shell: Navigation, Zustand und Anbindung des Spiels an das Profil. */
 
-import NuggetRush from './game.js';
+import LocoFryer from './game.js';
 import { loadProfile, saveProfile, resetProfile } from './storage.js';
 import { isMuted, toggleMute, sfx } from './audio.js';
 import {
   REWARDS,
   DAILY_BONUS_COINS,
+  DAILY_COIN_CAP,
+  MAX_ACTIVE_COUPONS,
+  POINTS_PER_COIN,
   applyGameResult,
   canClaimDailyBonus,
   claimDailyBonus,
   isCouponExpired,
   markCouponUsed,
   redeemReward,
+  remainingDailyCoins,
 } from './economy.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -30,6 +34,7 @@ let profile = loadProfile();
 let game = null;
 let toastTimer = null;
 let resetTimer = null;
+let overlayMode = 'pause';
 
 /* ------------------------------------------------------------ Hilfsmittel */
 
@@ -85,6 +90,12 @@ function renderHome() {
   $('#home-games').textContent = profile.gamesPlayed;
   $('#home-coupons').textContent = profile.coupons.filter((coupon) => !coupon.redeemed).length;
 
+  const remaining = remainingDailyCoins(profile);
+  $('#wallet-daily').textContent =
+    remaining > 0
+      ? `Heute noch ${remaining} von ${DAILY_COIN_CAP} Coins erspielbar`
+      : 'Tageslimit erreicht – morgen gibt es wieder Coins';
+
   const bonusButton = $('#bonus-button');
   const claimable = canClaimDailyBonus(profile);
   bonusButton.disabled = !claimable;
@@ -122,6 +133,9 @@ function renderRewards() {
       <div class="reward__body">
         <p class="reward__title">${reward.title}</p>
         <p class="reward__subtitle">${reward.subtitle}</p>
+        <p class="reward__terms">${
+          reward.minOrder > 0 ? `ab ${reward.minOrder} € Bestellwert` : 'zu jeder Bestellung'
+        }</p>
       </div>
       <button class="reward__action" type="button" data-reward="${reward.id}" ${
         affordable ? '' : 'disabled'
@@ -158,7 +172,9 @@ function renderCoupons() {
         <span class="coupon__meta">${status}</span>
       </div>
       <p class="coupon__code">${coupon.code}</p>
-      <p class="coupon__meta">Code an der Kasse vorzeigen.</p>
+      <p class="coupon__meta">${
+        coupon.minOrder > 0 ? `Ab ${coupon.minOrder} € Bestellwert. ` : ''
+      }Code an der Kasse vorzeigen.</p>
       ${
         inactive
           ? ''
@@ -173,10 +189,15 @@ function renderCoupons() {
 
 function ensureGame() {
   if (!game) {
-    game = new NuggetRush($('#game-canvas'), {
+    game = new LocoFryer($('#game-canvas'), {
       onUpdate: updateHud,
       onGameOver: handleGameOver,
     });
+
+    // Prüfzugang für automatisierte Tests, nur mit ?debug in der Adresse.
+    if (new URLSearchParams(window.location.search).has('debug')) {
+      window.locoFryer = game;
+    }
   }
   return game;
 }
@@ -184,30 +205,62 @@ function ensureGame() {
 function updateHud(state) {
   $('#hud-score').textContent = state.score.toLocaleString('de-DE');
   $('#hud-combo').textContent = `x${state.combo}`;
-  $('#hud-lives').textContent = '❤️'.repeat(Math.max(0, state.lives));
+  $('#hud-strikes').innerHTML = Array.from({ length: 3 }, (unused, index) =>
+    index < state.strikes ? '<i class="strike strike--used"></i>' : '<i class="strike"></i>',
+  ).join('');
+}
+
+function showOverlay(mode, { title, text, primary }) {
+  overlayMode = mode;
+  $('#overlay-title').textContent = title;
+  $('#overlay-text').textContent = text;
+  $('#overlay-resume').textContent = primary;
+  $('#game-overlay').hidden = false;
 }
 
 function startGame() {
   showScreen('play');
-  $('#game-overlay').hidden = true;
   const instance = ensureGame();
   // Layout steht erst nach dem Screen-Wechsel fest.
-  requestAnimationFrame(() => {
-    instance.onResize();
-    instance.start();
+  requestAnimationFrame(() => instance.onResize());
+
+  // Erst orientieren, dann losfrittieren – der Timing-Druck beginnt bewusst
+  // nicht in dem Moment, in dem der Bildschirm wechselt.
+  showOverlay('start', {
+    title: 'Bereit?',
+    text: 'Tippe ein Teil genau dann, wenn sein Ring golden leuchtet. Dreimal verbrannt und die Schicht ist vorbei.',
+    primary: 'Losfrittieren',
   });
 }
 
-function handleGameOver({ score, distance }) {
+function beginRound() {
+  $('#game-overlay').hidden = true;
+  ensureGame().start();
+}
+
+function handleGameOver({ score, perfects }) {
   const result = applyGameResult(profile, score, new Date());
   profile = result.profile;
   persist();
 
   $('#result-score').textContent = score.toLocaleString('de-DE');
-  $('#result-distance').textContent = `${distance.toLocaleString('de-DE')} m`;
+  $('#result-perfects').textContent = perfects;
   $('#result-coins').innerHTML = `+${result.earned}${COIN_ICON}`;
   $('#result-balance').innerHTML = `${profile.coins.toLocaleString('de-DE')}${COIN_ICON}`;
   $('#result-badge').hidden = !result.isNewRecord;
+
+  // Erklären, warum es weniger Coins gab als die Punkte hergeben würden.
+  const note = $('#result-note');
+  if (result.cappedAway > 0) {
+    note.textContent = `Tageslimit erreicht: ${result.cappedAway} Coins konnten heute nicht mehr gutgeschrieben werden.`;
+    note.hidden = false;
+  } else if (result.earned === 0) {
+    const missing = POINTS_PER_COIN - (score % POINTS_PER_COIN);
+    note.textContent = `Noch ${missing.toLocaleString('de-DE')} Punkte bis zum nächsten Coin.`;
+    note.hidden = false;
+  } else {
+    note.hidden = true;
+  }
 
   showScreen('over');
 }
@@ -215,14 +268,21 @@ function handleGameOver({ score, distance }) {
 function pauseGame() {
   if (!game || !game.running || game.paused) return;
   game.pause();
-  $('#overlay-title').textContent = 'Pause';
-  $('#overlay-text').textContent = 'Tippe auf Weiter, um zurück ins Rennen zu kommen.';
-  $('#game-overlay').hidden = false;
+  showOverlay('pause', {
+    title: 'Pause',
+    text: 'Das Öl bleibt heiß. Weiter, wenn du bereit bist.',
+    primary: 'Weiter',
+  });
 }
 
 function resumeGame() {
   $('#game-overlay').hidden = true;
   game?.resume();
+}
+
+function handleOverlayPrimary() {
+  if (overlayMode === 'start') beginRound();
+  else resumeGame();
 }
 
 function quitGame() {
@@ -249,11 +309,14 @@ function claimBonus() {
 function handleRedeem(rewardId) {
   const result = redeemReward(profile, rewardId);
   if (!result.ok) {
-    toast(
-      result.error === 'insufficient-coins'
-        ? 'Dafür reichen deine Coins noch nicht.'
-        : 'Diese Belohnung gibt es nicht mehr.',
-    );
+    const messages = {
+      'insufficient-coins': 'Dafür reichen deine Coins noch nicht.',
+      'coupon-limit':
+        MAX_ACTIVE_COUPONS === 1
+          ? 'Löse erst deinen offenen Gutschein ein.'
+          : `Du kannst höchstens ${MAX_ACTIVE_COUPONS} Gutscheine offen haben.`,
+    };
+    toast(messages[result.error] ?? 'Diese Belohnung gibt es nicht mehr.');
     return;
   }
   profile = result.profile;
@@ -316,11 +379,9 @@ $('#bonus-button').addEventListener('click', claimBonus);
 $('#reset-button').addEventListener('click', handleReset);
 
 $('#pause-button').addEventListener('click', pauseGame);
-$('#overlay-resume').addEventListener('click', resumeGame);
+$('#overlay-resume').addEventListener('click', handleOverlayPrimary);
 $('#overlay-quit').addEventListener('click', quitGame);
 $('#quit-button').addEventListener('click', quitGame);
-$('#control-left').addEventListener('click', () => game?.move(-1));
-$('#control-right').addEventListener('click', () => game?.move(1));
 
 $('#mute-button').addEventListener('click', () => {
   toggleMute();

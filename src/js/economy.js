@@ -5,11 +5,36 @@
  * sowohl im Browser als auch unter Node (Tests) laufen kann.
  */
 
-/** Umrechnungskurs: erspielte Punkte -> Loco Coins. */
-export const POINTS_PER_COIN = 10;
+/*
+ * Wirtschaftliche Auslegung
+ * -------------------------
+ * Die Werte sind bewusst streng gewählt: Ein Gutschein soll ein Grund zum
+ * Wiederkommen sein, kein Automatismus. Wer fast täglich spielt, erreicht den
+ * günstigsten Gutschein nach etwa einer Woche.
+ *
+ * Drei Bremsen wirken zusammen:
+ *   1. hoher Umrechnungskurs (Punkte -> Coins)
+ *   2. Tagesobergrenze für erspielte Coins (verhindert Dauergrinden)
+ *   3. nur ein offener Gutschein gleichzeitig (verhindert Horten)
+ *
+ * Zusätzlich hat jede Belohnung außer dem Dip einen Mindestbestellwert –
+ * damit steht hinter jedem eingelösten Gutschein immer Umsatz.
+ *
+ * Alle Stellschrauben stehen hier zentral und lassen sich ohne weitere
+ * Codeänderungen nachjustieren.
+ */
 
-/** Täglicher Login-Bonus in Coins. */
-export const DAILY_BONUS_COINS = 25;
+/** Umrechnungskurs: erspielte Punkte -> Loco Coins. */
+export const POINTS_PER_COIN = 2000;
+
+/** Höchstzahl an Coins, die pro Kalendertag erspielt werden kann. */
+export const DAILY_COIN_CAP = 20;
+
+/** Täglicher Login-Bonus in Coins (zählt nicht gegen die Obergrenze). */
+export const DAILY_BONUS_COINS = 5;
+
+/** So viele nicht eingelöste Gutscheine darf ein Gast gleichzeitig halten. */
+export const MAX_ACTIVE_COUPONS = 1;
 
 /** Gültigkeitsdauer eines eingelösten Gutscheins in Tagen. */
 export const COUPON_VALID_DAYS = 14;
@@ -19,36 +44,41 @@ export const REWARDS = [
   {
     id: 'dip',
     title: 'Dip nach Wahl',
-    subtitle: 'Truffle Mayo, Harissa Mayo oder Classic – gratis',
-    cost: 150,
+    subtitle: 'Truffle Mayo, Harissa Mayo oder Classic',
+    cost: 100,
+    minOrder: 0,
     icon: './assets/rewards/dip.svg',
   },
   {
     id: 'fries',
     title: 'Loco Fries',
-    subtitle: 'Portion Fries gratis zu jedem Menü',
-    cost: 300,
+    subtitle: 'Eine Portion Fries gratis',
+    cost: 200,
+    minOrder: 10,
     icon: './assets/rewards/fries.svg',
   },
   {
     id: 'tenders',
     title: '4 Chicken Tenders',
-    subtitle: 'Gratis Tenders ab 10 € Bestellwert',
-    cost: 600,
+    subtitle: 'Vier Tenders gratis zur Bestellung',
+    cost: 350,
+    minOrder: 15,
     icon: './assets/rewards/tenders.svg',
   },
   {
     id: 'burger',
     title: 'Loco Burger für 1 €',
     subtitle: 'Crispy Chicken, Cheese und Pickles',
-    cost: 900,
+    cost: 600,
+    minOrder: 15,
     icon: './assets/rewards/burger.svg',
   },
   {
     id: 'bucket',
     title: '20 % auf den Bucket',
     subtitle: 'Für den großen Hunger mit der Crew',
-    cost: 1500,
+    cost: 900,
+    minOrder: 25,
     icon: './assets/rewards/bucket.svg',
   },
 ];
@@ -97,9 +127,17 @@ export function createProfile() {
     highScore: 0,
     gamesPlayed: 0,
     lastBonusDay: null,
+    coinDay: null,
+    coinsToday: 0,
     scores: [],
     coupons: [],
   };
+}
+
+/** Wie viele Coins heute noch erspielt werden können. */
+export function remainingDailyCoins(profile, now = new Date()) {
+  const usedToday = profile.coinDay === dayKey(now) ? profile.coinsToday : 0;
+  return Math.max(0, DAILY_COIN_CAP - usedToday);
 }
 
 /**
@@ -107,7 +145,13 @@ export function createProfile() {
  * Gibt ein neues Profil sowie die Auswertung der Runde zurück.
  */
 export function applyGameResult(profile, score, now = new Date()) {
-  const earned = coinsForScore(score);
+  const today = dayKey(now);
+  const usedToday = profile.coinDay === today ? profile.coinsToday : 0;
+
+  // Was die Runde wert wäre, und was die Tagesobergrenze davon übrig lässt.
+  const gross = coinsForScore(score);
+  const earned = Math.min(gross, remainingDailyCoins(profile, now));
+
   const isNewRecord = score > profile.highScore;
   const scores = [...profile.scores, { score, date: now.toISOString() }]
     .sort((a, b) => b.score - a.score)
@@ -117,11 +161,15 @@ export function applyGameResult(profile, score, now = new Date()) {
     profile: {
       ...profile,
       coins: profile.coins + earned,
+      coinDay: today,
+      coinsToday: usedToday + earned,
       highScore: Math.max(profile.highScore, score),
       gamesPlayed: profile.gamesPlayed + 1,
       scores,
     },
     earned,
+    gross,
+    cappedAway: gross - earned,
     isNewRecord,
   };
 }
@@ -157,6 +205,9 @@ export function redeemReward(profile, rewardId, { now = new Date(), random = Mat
   if (profile.coins < reward.cost) {
     return { profile, ok: false, error: 'insufficient-coins' };
   }
+  if (activeCoupons(profile, now).length >= MAX_ACTIVE_COUPONS) {
+    return { profile, ok: false, error: 'coupon-limit' };
+  }
 
   const expiresAt = new Date(now.getTime() + COUPON_VALID_DAYS * 24 * 60 * 60 * 1000);
   const coupon = {
@@ -164,6 +215,7 @@ export function redeemReward(profile, rewardId, { now = new Date(), random = Mat
     rewardId: reward.id,
     title: reward.title,
     cost: reward.cost,
+    minOrder: reward.minOrder ?? 0,
     createdAt: now.toISOString(),
     expiresAt: expiresAt.toISOString(),
     redeemed: false,
