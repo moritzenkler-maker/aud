@@ -1,6 +1,8 @@
 /** App-Shell: Navigation, Zustand und Anbindung des Spiels an das Profil. */
 
-import LocoFryer from './game.js';
+import { createGame } from './game.js';
+import { MODES, DEFAULT_MODE, resolveMode } from './modes.js';
+import { drawFood } from './games/icons.js';
 import { loadProfile, saveProfile, resetProfile } from './storage.js';
 import { isMuted, toggleMute, sfx } from './audio.js';
 import { applyMissionProgress, missionState } from './missions.js';
@@ -29,6 +31,7 @@ const COIN_ICON = '<img class="coin-icon" src="./assets/coin.svg" alt="Loco Coin
 
 const SCREENS = {
   home: $('#screen-home'),
+  modes: $('#screen-modes'),
   play: $('#screen-game'),
   over: $('#screen-over'),
   rewards: $('#screen-rewards'),
@@ -39,11 +42,13 @@ let game = null;
 let toastTimer = null;
 let resetTimer = null;
 let overlayMode = 'pause';
+// Zuletzt gespieltes Spiel merken, damit der Startknopf direkt dorthin führt.
+let currentMode = resolveMode(profile.lastMode ?? DEFAULT_MODE).id;
 let lastRun = null;
 let shareCanvas = null;
 // Die Erklärung vor der Runde kommt nur einmal je Sitzung – danach soll der
 // nächste Versuch ohne Zwischenschritt starten.
-let briefingSeen = false;
+const briefingSeen = new Set();
 
 /* ------------------------------------------------------------ Hilfsmittel */
 
@@ -85,6 +90,7 @@ function showScreen(name) {
     game.stop();
   }
   if (name === 'home') renderHome();
+  if (name === 'modes') renderModes();
   if (name === 'rewards') renderRewards();
   // Ein scharfgeschalteter Reset gilt nur, solange der Screen sichtbar bleibt.
   if (name !== 'rewards') disarmReset();
@@ -107,6 +113,7 @@ function renderHome() {
     note.hidden = true;
   }
 
+  $('#play-label').textContent = `${resolveMode(currentMode).title} spielen`;
   renderMissions();
 
   const remaining = remainingDailyCoins(profile);
@@ -165,6 +172,50 @@ function renderMissions() {
     open === 0
       ? 'Alle Missionen erledigt – morgen gibt es drei neue.'
       : 'Missionscoins zählen gegen dasselbe Tageslimit wie erspielte Coins.';
+}
+
+/** Kleines Vorschaubild je Spiel, gezeichnet mit denselben Icons wie im Spiel. */
+function modeIcon(mode) {
+  const canvas = document.createElement('canvas');
+  const size = 56;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = `${size}px`;
+  canvas.style.height = `${size}px`;
+
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawFood(ctx, mode.icon, size / 2, size / 2, size * 0.66);
+  return canvas;
+}
+
+function renderModes() {
+  $('#modes-coins').textContent = profile.coins.toLocaleString('de-DE');
+
+  const grid = $('#mode-grid');
+  grid.innerHTML = '';
+
+  for (const mode of MODES) {
+    const best = profile.modeScores?.[mode.id] ?? 0;
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = `mode${mode.id === currentMode ? ' mode--current' : ''}`;
+    card.dataset.mode = mode.id;
+    card.innerHTML = `
+      <span class="mode__icon"></span>
+      <span class="mode__body">
+        <span class="mode__title">${mode.title}</span>
+        <span class="mode__subtitle">${mode.subtitle}</span>
+        <span class="mode__meta">
+          <span class="mode__skill">${mode.skill}</span>
+          <span class="mode__best">${best > 0 ? `Bestwert ${best.toLocaleString('de-DE')}` : 'noch ungespielt'}</span>
+        </span>
+      </span>
+    `;
+    card.querySelector('.mode__icon').appendChild(modeIcon(mode));
+    grid.appendChild(card);
+  }
 }
 
 function renderRewards() {
@@ -235,25 +286,33 @@ function renderCoupons() {
 
 /* -------------------------------------------------------------------- Spiel */
 
+/** Legt für den gewählten Modus eine frische Spielinstanz an. */
 function ensureGame() {
-  if (!game) {
-    game = new LocoFryer($('#game-canvas'), {
-      onUpdate: updateHud,
-      onGameOver: handleGameOver,
-    });
+  if (game && game.config.id === currentMode) return game;
 
-    // Prüfzugang für automatisierte Tests, nur mit ?debug in der Adresse.
-    if (new URLSearchParams(window.location.search).has('debug')) {
-      window.locoFryer = game;
-    }
+  game?.destroy();
+  game = createGame(currentMode, $('#game-canvas'), {
+    onUpdate: updateHud,
+    onGameOver: handleGameOver,
+  });
+
+  // Prüfzugang für automatisierte Tests, nur mit ?debug in der Adresse.
+  if (new URLSearchParams(window.location.search).has('debug')) {
+    window.locoGame = game;
   }
   return game;
+}
+
+function selectMode(modeId) {
+  currentMode = resolveMode(modeId).id;
+  profile = { ...profile, lastMode: currentMode };
+  persist();
 }
 
 function updateHud(state) {
   $('#hud-score').textContent = state.score.toLocaleString('de-DE');
   $('#hud-combo').textContent = `x${state.combo}`;
-  $('#hud-strikes').innerHTML = Array.from({ length: 3 }, (unused, index) =>
+  $('#hud-strikes').innerHTML = Array.from({ length: state.maxStrikes ?? 3 }, (unused, index) =>
     index < state.strikes ? '<i class="strike strike--used"></i>' : '<i class="strike"></i>',
   ).join('');
 }
@@ -267,26 +326,30 @@ function showOverlay(mode, { title, text, primary }) {
 }
 
 function startGame() {
+  const active = resolveMode(currentMode);
+  $('#hud-mode').textContent = active.title;
+  $('#controls-hint').textContent = active.subtitle;
   showScreen('play');
   const instance = ensureGame();
   // Layout steht erst nach dem Screen-Wechsel fest.
   requestAnimationFrame(() => instance.onResize());
 
-  if (briefingSeen) {
+  if (briefingSeen.has(currentMode)) {
     beginRound();
     return;
   }
 
   // Beim ersten Mal kurz erklären, danach geht es direkt los.
+  const mode = resolveMode(currentMode);
   showOverlay('start', {
-    title: 'Bereit?',
-    text: 'Tippe ein Teil genau dann, wenn sein Ring golden leuchtet. Dreimal verbrannt und die Schicht ist vorbei.',
-    primary: 'Losfrittieren',
+    title: mode.title,
+    text: `${mode.subtitle}. Drei Fehler beenden die Runde.`,
+    primary: 'Los geht\'s',
   });
 }
 
 function beginRound() {
-  briefingSeen = true;
+  briefingSeen.add(currentMode);
   $('#game-overlay').hidden = true;
   ensureGame().start();
 }
@@ -295,7 +358,7 @@ function handleGameOver(run) {
   const { score, perfects, closestMiss } = run;
   const now = new Date();
 
-  const result = applyGameResult(profile, score, now);
+  const result = applyGameResult(profile, score, now, run.mode ?? currentMode);
   profile = result.profile;
 
   const missions = applyMissionProgress(profile, run, now);
@@ -304,6 +367,7 @@ function handleGameOver(run) {
 
   lastRun = { ...run, isRecord: result.isNewRecord, streak: result.streak };
 
+  $('#result-title').textContent = resolveMode(run.mode ?? currentMode).title;
   $('#result-score').textContent = score.toLocaleString('de-DE');
   $('#result-perfects').textContent = perfects;
   $('#result-miss').textContent =
@@ -320,7 +384,9 @@ function handleGameOver(run) {
   }
   $('#result-coins').innerHTML = `+${result.earned}${COIN_ICON}`;
   $('#result-balance').innerHTML = `${profile.coins.toLocaleString('de-DE')}${COIN_ICON}`;
-  $('#result-badge').hidden = !result.isNewRecord;
+  const badge = $('#result-badge');
+  badge.hidden = !(result.isNewRecord || result.isModeRecord);
+  badge.textContent = result.isNewRecord ? 'Neuer Rekord! 🏆' : 'Bestwert in diesem Spiel! 🏆';
 
   if (result.rankUp) toast(`Neuer Rang: ${result.rankUp.title}!`);
   else if (missions.completed.length > 0) toast(`Mission geschafft: +${missions.coins} Coins`);
@@ -480,6 +546,15 @@ $('#to-rewards-button').addEventListener('click', () => showScreen('rewards'));
 $('#bonus-button').addEventListener('click', claimBonus);
 $('#reset-button').addEventListener('click', handleReset);
 $('#share-button').addEventListener('click', openShare);
+$('#modes-button').addEventListener('click', () => showScreen('modes'));
+$('#other-mode-button').addEventListener('click', () => showScreen('modes'));
+
+$('#mode-grid').addEventListener('click', (event) => {
+  const card = event.target.closest('[data-mode]');
+  if (!card) return;
+  selectMode(card.dataset.mode);
+  startGame();
+});
 $('#share-send').addEventListener('click', sendShare);
 $('#share-close').addEventListener('click', closeShare);
 
@@ -516,7 +591,7 @@ $('#coupon-list').addEventListener('click', (event) => {
 $('#tabbar').addEventListener('click', (event) => {
   const tab = event.target.closest('.tab');
   if (!tab) return;
-  if (tab.dataset.screen === 'play') startGame();
+  if (tab.dataset.screen === 'play') showScreen('modes');
   else showScreen(tab.dataset.screen);
 });
 

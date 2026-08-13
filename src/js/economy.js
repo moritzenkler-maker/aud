@@ -10,7 +10,7 @@
  * -------------------------
  * Die Werte sind bewusst streng gewählt: Ein Gutschein soll ein Grund zum
  * Wiederkommen sein, kein Automatismus. Wer fast täglich spielt, erreicht den
- * günstigsten Gutschein nach etwa einer Woche.
+ * günstigsten Gutschein nach rund zwei bis drei Wochen.
  *
  * Drei Bremsen wirken zusammen:
  *   1. hoher Umrechnungskurs (Punkte -> Coins)
@@ -25,13 +25,13 @@
  */
 
 /** Umrechnungskurs: erspielte Punkte -> Loco Coins. */
-export const POINTS_PER_COIN = 2000;
+export const POINTS_PER_COIN = 4000;
 
 /** Höchstzahl an Coins, die pro Kalendertag erspielt werden kann. */
-export const DAILY_COIN_CAP = 20;
+export const DAILY_COIN_CAP = 10;
 
 /** Täglicher Login-Bonus in Coins (zählt nicht gegen die Obergrenze). */
-export const DAILY_BONUS_COINS = 5;
+export const DAILY_BONUS_COINS = 2;
 
 /** So viele nicht eingelöste Gutscheine darf ein Gast gleichzeitig halten. */
 export const MAX_ACTIVE_COUPONS = 1;
@@ -67,7 +67,7 @@ export const REWARDS = [
     id: 'dip',
     title: 'Dip nach Wahl',
     subtitle: 'Truffle Mayo, Harissa Mayo oder Classic',
-    cost: 100,
+    cost: 150,
     minOrder: 0,
     icon: './assets/rewards/dip.svg',
   },
@@ -75,7 +75,7 @@ export const REWARDS = [
     id: 'fries',
     title: 'Loco Fries',
     subtitle: 'Eine Portion Fries gratis',
-    cost: 200,
+    cost: 300,
     minOrder: 10,
     icon: './assets/rewards/fries.svg',
   },
@@ -83,7 +83,7 @@ export const REWARDS = [
     id: 'tenders',
     title: '4 Chicken Tenders',
     subtitle: 'Vier Tenders gratis zur Bestellung',
-    cost: 350,
+    cost: 550,
     minOrder: 15,
     icon: './assets/rewards/tenders.svg',
   },
@@ -91,7 +91,7 @@ export const REWARDS = [
     id: 'burger',
     title: 'Loco Burger für 1 €',
     subtitle: 'Crispy Chicken, Cheese und Pickles',
-    cost: 600,
+    cost: 900,
     minOrder: 15,
     icon: './assets/rewards/burger.svg',
   },
@@ -99,7 +99,7 @@ export const REWARDS = [
     id: 'bucket',
     title: '20 % auf den Bucket',
     subtitle: 'Für den großen Hunger mit der Crew',
-    cost: 900,
+    cost: 1500,
     minOrder: 25,
     icon: './assets/rewards/bucket.svg',
   },
@@ -156,6 +156,8 @@ export function createProfile() {
     lastPlayDay: null,
     missionDay: null,
     missions: {},
+    lastMode: null,
+    modeScores: {},
     scores: [],
     coupons: [],
   };
@@ -225,7 +227,7 @@ export function remainingDailyCoins(profile, now = new Date()) {
  * Verbucht ein beendetes Spiel.
  * Gibt ein neues Profil sowie die Auswertung der Runde zurück.
  */
-export function applyGameResult(profile, score, now = new Date()) {
+export function applyGameResult(profile, score, now = new Date(), mode = null) {
   // Was die Runde wert wäre, und was die Tagesobergrenze davon übrig lässt.
   const gross = coinsForScore(score);
   const { profile: paid, granted, cappedAway } = grantCoins(profile, gross, now);
@@ -237,11 +239,19 @@ export function applyGameResult(profile, score, now = new Date()) {
     .slice(0, 10);
 
   const highScore = Math.max(profile.highScore, score);
+
+  // Bestwert je Modus, damit sich alle acht Spiele einzeln lohnen.
+  const modeScores = { ...(profile.modeScores ?? {}) };
+  const isModeRecord = mode ? score > (modeScores[mode] ?? 0) : false;
+  if (mode && isModeRecord) modeScores[mode] = score;
+
   const withRun = registerPlay(
     {
       ...paid,
       highScore,
       gamesPlayed: profile.gamesPlayed + 1,
+      lastMode: mode ?? profile.lastMode,
+      modeScores,
       scores,
     },
     now,
@@ -255,6 +265,7 @@ export function applyGameResult(profile, score, now = new Date()) {
     gross,
     cappedAway,
     isNewRecord,
+    isModeRecord,
     rankUp: rankAfter.id !== rankBefore.id ? rankAfter : null,
     streak: withRun.streak,
   };

@@ -13,6 +13,7 @@ import {
   claimDailyBonus,
   coinsForScore,
   createProfile,
+  findReward,
   generateCouponCode,
   isCouponExpired,
   markCouponUsed,
@@ -112,21 +113,22 @@ test('Tagesbonus lässt sich pro Kalendertag genau einmal abholen', () => {
 });
 
 test('redeemReward prüft Guthaben und erzeugt einen gültigen Gutschein', () => {
-  const poor = { ...createProfile(), coins: 20 };
+  const poor = { ...createProfile(), coins: 5 };
   const failed = redeemReward(poor, 'dip');
   assert.equal(failed.ok, false);
   assert.equal(failed.error, 'insufficient-coins');
-  assert.equal(failed.profile.coins, 20);
+  assert.equal(failed.profile.coins, 5);
 
   const unknown = redeemReward({ ...createProfile(), coins: 9999 }, 'gibt-es-nicht');
   assert.equal(unknown.ok, false);
   assert.equal(unknown.error, 'unknown-reward');
 
   const now = new Date('2026-08-12T12:00:00Z');
+  const dipCost = findReward('dip').cost;
   const rich = { ...createProfile(), coins: 500 };
   const success = redeemReward(rich, 'dip', { now });
   assert.equal(success.ok, true);
-  assert.equal(success.profile.coins, 400);
+  assert.equal(success.profile.coins, 500 - dipCost);
   assert.equal(success.profile.coupons.length, 1);
   assert.match(success.coupon.code, /^LOCO-[A-Z2-9]{4}-[A-Z2-9]{4}$/);
 

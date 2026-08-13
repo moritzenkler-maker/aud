@@ -9,9 +9,9 @@
     <meta name="theme-color" content="#ffdd00" />
     <meta
       name="description"
-      content="Loco Chicken Deutschland – spiele Loco Fryer, sammle Loco Coins und sichere dir Gutscheine."
+      content="Loco Chicken Deutschland – acht Küchenspiele, Loco Coins sammeln und Gutscheine sichern."
     />
-    <title>Loco Chicken – Loco Fryer</title>
+    <title>Loco Chicken – Loco Games</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
@@ -45,19 +45,22 @@
           <span class="bonus-card__icon">🎁</span>
           <span class="bonus-card__text">
             <strong id="bonus-title">Tagesbonus abholen</strong>
-            <small id="bonus-subtitle">+25 Coins – jeden Tag neu</small>
+            <small id="bonus-subtitle">Jeden Tag neu</small>
           </span>
         </button>
 
         <div class="hero">
           <img class="hero__logo" src="./assets/logo.svg" alt="Loco Chicken" width="108" height="108" />
-          <h1 class="hero__title">Loco&nbsp;Fryer</h1>
+          <h1 class="hero__title">Loco&nbsp;Games</h1>
           <p class="hero__text">
-            Du stehst an der Fritteuse. Zieh jedes Teil im goldenen Moment heraus – kurz bevor
-            es verbrennt. Perfektes Timing zahlt sich aus, Ungeduld nicht.
+            Acht Spiele in der Küche – Timing, Gedächtnis, Reaktion, Kopfrechnen. Punkte gibt es
+            nur für saubere Züge, und aus Punkten werden Loco Coins.
           </p>
           <button class="button button--primary button--big" id="play-button" type="button">
-            Jetzt spielen
+            <span id="play-label">Jetzt spielen</span>
+          </button>
+          <button class="button button--ghost" id="modes-button" type="button">
+            Alle 8 Spiele
           </button>
         </div>
 
@@ -85,19 +88,19 @@
         </section>
 
         <section class="panel">
-          <h2 class="panel__title">So geht's</h2>
+          <h2 class="panel__title">In allen Spielen gleich</h2>
           <ul class="rules">
             <li>
               <span class="rules__dot rules__dot--gold"></span>
-              <span><strong>Perfekt:</strong> Ring leuchtet golden – volle Punkte, Combo steigt.</span>
+              <span><strong>Sauberer Zug:</strong> volle Punkte, die Combo steigt bis x8.</span>
             </li>
             <li>
               <span class="rules__dot rules__dot--pale"></span>
-              <span><strong>Zu früh:</strong> wenige Punkte, die Combo fällt auf x1 zurück.</span>
+              <span><strong>Ungenau:</strong> kaum Punkte, die Combo fällt auf x1 zurück.</span>
             </li>
             <li>
               <span class="rules__dot rules__dot--burnt"></span>
-              <span><strong>Verbrannt:</strong> Ring läuft voll – dreimal und die Schicht ist vorbei.</span>
+              <span><strong>Fehler:</strong> drei davon und die Schicht ist vorbei.</span>
             </li>
           </ul>
         </section>
@@ -110,6 +113,19 @@
         </section>
       </section>
 
+      <!-- --------------------------------------------------- Spielauswahl -->
+      <section class="screen" id="screen-modes" aria-label="Spiele">
+        <header class="topbar">
+          <h2 class="topbar__title">Spiele</h2>
+          <span class="topbar__coins"><span id="modes-coins">0</span><img class="coin-icon" src="./assets/coin.svg" alt="Loco Coins" /></span>
+        </header>
+        <p class="section-hint">
+          Acht eigenständige Spiele. Jedes hat seinen eigenen Bestwert – Coins zählen überall
+          gegen dasselbe Tageslimit.
+        </p>
+        <div class="modes" id="mode-grid"></div>
+      </section>
+
       <!-- ------------------------------------------------------------ Spiel -->
       <section class="screen screen--game" id="screen-game" aria-label="Spiel">
         <div class="hud">
@@ -118,7 +134,7 @@
           </button>
           <div class="hud__score">
             <span id="hud-score">0</span>
-            <small>Punkte</small>
+            <small id="hud-mode">Punkte</small>
           </div>
           <div class="hud__right">
             <span class="hud__combo" id="hud-combo">x1</span>
@@ -138,7 +154,7 @@
         </div>
 
         <div class="controls">
-          <p class="controls__hint">Tippe das Teil, wenn der Ring golden leuchtet</p>
+          <p class="controls__hint" id="controls-hint"></p>
           <button class="control control--pause" id="pause-button" type="button" aria-label="Pause">
             ❚❚
           </button>
@@ -149,7 +165,7 @@
       <section class="screen" id="screen-over" aria-label="Rundenende">
         <div class="result">
           <p class="result__badge" id="result-badge" hidden>Neuer Rekord! 🏆</p>
-          <h2 class="result__title">Runde beendet</h2>
+          <h2 class="result__title" id="result-title">Runde beendet</h2>
           <p class="result__score" id="result-score">0</p>
           <p class="result__label">Punkte</p>
 
@@ -176,6 +192,9 @@
           </button>
           <button class="button button--share" id="share-button" type="button">
             Ergebnis teilen
+          </button>
+          <button class="button button--ghost" id="other-mode-button" type="button">
+            Anderes Spiel
           </button>
           <button class="button button--ghost" id="to-rewards-button" type="button">
             Belohnungen ansehen
@@ -216,7 +235,7 @@
         <span aria-hidden="true">🏠</span><span>Start</span>
       </button>
       <button class="tab" data-screen="play" type="button">
-        <span aria-hidden="true">🎮</span><span>Spielen</span>
+        <span aria-hidden="true">🎮</span><span>Spiele</span>
       </button>
       <button class="tab" data-screen="rewards" type="button">
         <span aria-hidden="true">🎟️</span><span>Belohnungen</span>

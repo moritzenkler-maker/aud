@@ -23,9 +23,20 @@ const read = (...parts) => readFile(join(ROOT, ...parts), 'utf8');
 const MODULES = [
   'src/js/economy.js',
   'src/js/missions.js',
+  'src/js/modes.js',
   'src/js/storage.js',
   'src/js/audio.js',
   'src/js/sharecard.js',
+  'src/js/games/base.js',
+  'src/js/games/icons.js',
+  'src/js/games/fryer.js',
+  'src/js/games/order.js',
+  'src/js/games/sorting.js',
+  'src/js/games/chili.js',
+  'src/js/games/stack.js',
+  'src/js/games/dipmeter.js',
+  'src/js/games/register.js',
+  'src/js/games/belt.js',
   'src/js/game.js',
   'src/js/app.js',
 ];
@@ -72,10 +83,36 @@ function embedAssets(text, assets) {
   return output;
 }
 
+/**
+ * Prüft, ob zwei Module denselben Namen auf oberster Ebene vergeben.
+ * Im Bündel landen alle Module in einem Geltungsbereich – eine Dopplung
+ * wäre ein SyntaxError, der erst im Browser auffiele.
+ */
+function assertNoNameClashes(sources) {
+  const pattern = /^(?:export\s+)?(?:default\s+)?(?:const|let|var|function|class)\s+([A-Za-z_$][\w$]*)/gm;
+  const owners = new Map();
+  const clashes = [];
+
+  for (const [path, source] of sources) {
+    for (const [, name] of source.matchAll(pattern)) {
+      if (owners.has(name) && owners.get(name) !== path) {
+        clashes.push(`${name} (${owners.get(name)} und ${path})`);
+      } else {
+        owners.set(name, path);
+      }
+    }
+  }
+
+  if (clashes.length > 0) {
+    throw new Error(`Doppelte Namen auf oberster Ebene:\n  ${clashes.join('\n  ')}`);
+  }
+}
+
 async function build() {
   const [html, css, assets] = await Promise.all([read('index.html'), read('src/css/styles.css'), assetMap()]);
 
   const scripts = await Promise.all(MODULES.map((path) => read(path)));
+  assertNoNameClashes(MODULES.map((path, index) => [path, inlineModule(scripts[index])]));
   const bundle = scripts.map(inlineModule).join('\n\n');
 
   // Nur den Inhalt zwischen <body> und </body> übernehmen.
@@ -87,7 +124,7 @@ async function build() {
     .replace(/\s*<script type="module"[^>]*><\/script>/, '')
     .trim();
 
-  const page = `<title>Loco Fryer</title>
+  const page = `<title>Loco Games</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
 <!-- Automatisch erzeugt von scripts/build-preview.mjs – nicht von Hand ändern. -->

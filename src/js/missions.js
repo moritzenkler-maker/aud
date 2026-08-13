@@ -16,14 +16,15 @@
 import { dayKey, grantCoins } from './economy.js';
 
 /** Coins je erfüllter Mission (innerhalb der Tagesobergrenze). */
-export const MISSION_REWARD = 3;
+export const MISSION_REWARD = 2;
 
 /** Anzahl der Missionen pro Tag. */
 export const MISSIONS_PER_DAY = 3;
 
 /**
  * Missionsvorlagen.
- * `mode: 'best'` wertet die beste Einzelrunde, `mode: 'sum'` summiert den Tag.
+ * `mode: 'best'` wertet die beste Einzelrunde, `mode: 'sum'` summiert den Tag,
+ * `mode: 'distinct'` zählt unterschiedliche Werte aus `key(run)`.
  * `value(run)` liest den Fortschritt aus den Rundendaten.
  */
 export const MISSION_POOL = [
@@ -75,6 +76,21 @@ export const MISSION_POOL = [
     target: 6,
     mode: 'sum',
     value: (run) => run.perfectsByType?.wing ?? 0,
+  },
+  {
+    id: 'mode_variety',
+    title: '3 verschiedene Spiele heute',
+    target: 3,
+    mode: 'distinct',
+    value: () => 1,
+    key: (run) => run.mode ?? 'unbekannt',
+  },
+  {
+    id: 'rounds_total',
+    title: '5 Runden heute spielen',
+    target: 5,
+    mode: 'sum',
+    value: () => 1,
   },
 ];
 
@@ -160,11 +176,22 @@ export function applyMissionProgress(profile, run, now = new Date()) {
     const entry = stored[mission.id] ?? { progress: 0, done: false };
     if (entry.done) continue;
 
-    const runValue = mission.value(run) ?? 0;
-    const progress = mission.mode === 'sum' ? entry.progress + runValue : Math.max(entry.progress, runValue);
-    const done = progress >= mission.target;
+    let progress;
+    let seen = entry.seen ?? [];
 
-    stored[mission.id] = { progress, done };
+    if (mission.mode === 'distinct') {
+      // Zählt unterschiedliche Werte, nicht Wiederholungen.
+      const key = mission.key(run);
+      seen = seen.includes(key) ? seen : [...seen, key];
+      progress = seen.length;
+    } else if (mission.mode === 'sum') {
+      progress = entry.progress + (mission.value(run) ?? 0);
+    } else {
+      progress = Math.max(entry.progress, mission.value(run) ?? 0);
+    }
+
+    const done = progress >= mission.target;
+    stored[mission.id] = { progress, done, ...(mission.mode === 'distinct' ? { seen } : {}) };
     if (done) completed.push({ id: mission.id, title: mission.title, reward: MISSION_REWARD });
   }
 

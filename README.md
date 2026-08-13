@@ -1,7 +1,7 @@
 # Loco Chicken Deutschland – Gaming App
 
 Mobile Gaming- und Loyalty-App für Loco Chicken Deutschland: Gäste spielen
-**Loco Fryer**, verdienen dabei **Loco Coins** und tauschen diese gegen
+**acht Küchenspiele**, verdienen dabei **Loco Coins** und tauschen diese gegen
 Gutscheine ein, die im Restaurant vorgezeigt werden.
 
 Die App ist eine installierbare Web-App (PWA) ohne Build-Schritt und ohne
@@ -22,37 +22,51 @@ Für Node ab Version 20. Alternativ genügt jeder statische Webserver, der das
 Projektverzeichnis ausliefert (ein Öffnen der `index.html` per `file://`
 funktioniert wegen der ES-Module nicht).
 
-## Das Spiel: Loco Fryer
+## Die acht Spiele
 
-Ein Timing-Spiel an der Fritteuse. In sechs Körben garen Nuggets, Tenders und
-Keulen vor sich hin. Jedes Teil hat einen Garring, der sich füllt – und kurz
-bevor er voll ist, leuchtet ein schmaler goldener Abschnitt auf. Genau dann
-muss gezogen werden.
+Jedes Spiel hat eine eigene Mechanik – wem eines zu langweilig wird, wechselt.
+Gemeinsam sind ihnen nur der Rahmen und die Wertung.
 
-| Zeitpunkt | Folge |
+| Spiel | Können | Worum es geht |
+| --- | --- | --- |
+| **Fritteuse** | Timing | Teile im goldenen Moment ziehen, kurz vor dem Verbrennen |
+| **Bestellung** | Gedächtnis | Reihenfolge merken und nachtippen, sie wird länger und kürzer gezeigt |
+| **Sortieren** | Tempo | Chicken nach links, Beilagen nach rechts – im freien Fall |
+| **Chili-Alarm** | Reaktion | Chicken aus neun Luken greifen, Chilis liegen lassen |
+| **Burger-Stapel** | Präzision | Schwingende Schichten sauber setzen, Überstand geht verloren |
+| **Dip-Meter** | Nerven | Den Zeiger in der schrumpfenden Zone stoppen |
+| **Kasse** | Kopfrechnen | Das richtige Wechselgeld unter Zeitdruck wählen |
+| **Fließband** | Rhythmus | Jedes Teil genau an der Marke abgreifen |
+
+### In allen Spielen gleich
+
+| Element | Regel |
 | --- | --- |
-| Im goldenen Fenster | **Perfekt**: 100 Punkte × Combo, Combo steigt (bis x10) |
-| Vorher, ab halb gar | **Gut**: 20 Punkte × Combo, Combo bleibt stehen |
-| Zu früh | Teil ist hin, Combo fällt auf x1 zurück |
-| Zu spät | **Verbrannt**: ein Strike – nach dreien ist die Schicht vorbei |
+| Sauberer Zug | volle Punkte × Combo, die Combo steigt bis x8 |
+| Ungenauer Zug | kaum Punkte, die Combo fällt auf x1 zurück |
+| Fehler | drei davon beenden die Runde |
+| Serie | alle 6 sauberen Züge in Folge gibt es 300 Bonuspunkte |
+| Tempo | jedes Spiel wird mit jedem bearbeiteten Objekt schneller |
 
-Fünf perfekte Züge in Folge geben zusätzlich 500 Punkte („Heiß!").
+Wichtig für die Ökonomie: **In keinem Spiel bringt Nichtstun oder wildes
+Tippen Punkte.** Jedes Spiel setzt Untätigkeit unter Druck – verpasste Ware,
+Zugzwang-Balken oder ablaufende Zeitfenster – und jede unsaubere Aktion
+zerstört die Combo. Ein automatisierter Test spielt alle acht Spiele mit
+zufälligen Tipps: Sie enden zuverlässig mit drei Fehlern und nahezu null
+Punkten.
 
-Zwei Entscheidungen machen das Spiel schwer und dadurch reizvoll: Der goldene
-Moment liegt direkt vor dem Verbrennen, Warten bringt also Punkte und Risiko
-zugleich. Und die drei Teilesorten garen unterschiedlich schnell, weshalb
-blindes Mitzählen nicht funktioniert. Wildes Dauertippen wird bestraft, weil
-jedes zu früh gezogene Teil die Combo zerstört.
+### Architektur
 
-Mit jedem servierten Teil wird es schneller: Die Garzeit sinkt von 3,4 auf
-1,6 Sekunden, der Nachschub kommt dichter, und das goldene Fenster schrumpft
-von 18 % auf 7,5 % der Garzeit.
+`src/js/games/base.js` enthält alles, was jedes Spiel gleich braucht:
+Spielschleife, Auflösung, virtuelles Koordinatensystem, Eingaben, Partikel,
+Combo-Buchführung und die Übergabe an die App. Ein Spiel beschreibt nur noch
+seine eigene Mechanik über `setup`, `update`, `render` und `onPointer` und
+meldet Ergebnisse über `hit()` und `fail()`. Ein neues Spiel ist dadurch eine
+Datei plus ein Eintrag in `src/js/modes.js`.
 
-- **Steuerung:** Teil antippen. Am Desktop wahlweise die Tasten 1–6.
-- **Alle Stellschrauben** stehen als Konstanten am Anfang von `src/js/game.js`.
-
-Sämtliche Grafik wird prozedural auf ein Canvas gezeichnet – Edelstahlwand,
-Karo-Streifen, brodelndes Öl, Garringe und die Teile in jedem Garzustand.
+Alle Grafiken werden prozedural auf ein Canvas gezeichnet; die Speisen-Icons
+liegen gemeinsam in `src/js/games/icons.js`, damit ein Nugget überall gleich
+aussieht.
 
 ## Engagement-Mechaniken
 
@@ -66,9 +80,10 @@ und die Ökonomie nicht aufweicht.
 | --- | --- | --- |
 | **Kurze Runden mit Sofort-Neustart** | Die Entscheidung "noch eine Runde" darf keine Reibung haben. | Ergebnisbildschirm mit "Sofort nochmal" als erstem Button, Enter/Leertaste startet direkt. Die Erklärung vor der Runde erscheint nur einmal je Sitzung. |
 | **Beinahe-Treffer** | Knapp verfehlt motiviert stärker als klar verfehlt – vorausgesetzt, man sieht, wie knapp es war. | Jeder verfrühte Zug zeigt den Abstand in Sekunden ("0,18 s zu früh"), das Rundenergebnis nennt den knappsten Fehlversuch. |
-| **Sichtbare Könnenssteigerung** | Fortschritt muss spürbar sein, auch ohne Belohnung. | Combo bis x10, Perfekt-Serien mit Bonus, fünf Ränge von der Küchenhilfe zur Loco Legende. |
+| **Sichtbare Könnenssteigerung** | Fortschritt muss spürbar sein, auch ohne Belohnung. | Combo bis x8, Bonus für saubere Serien, fünf Ränge von der Küchenhilfe zur Loco Legende, eigener Bestwert je Spiel. |
 | **Tagesserie** | Verlustaversion bindet stärker als Belohnung: Eine Serie will man nicht reißen lassen. | Serienzähler auf der Startseite, deutlicher Hinweis, wenn heute noch nicht gespielt wurde. Bewusst **ohne** Coin-Auszahlung. |
-| **Tagesmissionen** | Ein frisches Ziel pro Tag, unabhängig vom Punktestand – und etwas, worüber man reden kann. | Drei Aufgaben täglich, aus dem Datum abgeleitet und damit für alle Geräte gleich. |
+| **Tagesmissionen** | Ein frisches Ziel pro Tag, unabhängig vom Punktestand – und etwas, worüber man reden kann. | Drei Aufgaben täglich, aus dem Datum abgeleitet und damit für alle Geräte gleich. Eine davon belohnt das Ausprobieren verschiedener Spiele. |
+| **Auswahl gegen Sättigung** | Ein einzelnes Spiel nutzt sich ab; die Wahl hält die Gewohnheit am Leben. | Acht Spiele mit eigenen Bestwerten, jederzeit wechselbar. |
 | **Teilbares Ergebnis** | Reichweite entsteht durch Weitergabe, nicht durch Werbung. | Ergebniskarte im Hochformat 9:16 mit Punktzahl, Combo, Rang und Serie – über das System-Teilen-Menü oder als Screenshot. |
 | **Spürbare Rückmeldung** | Auf dem Handy trägt Haptik und Ton mehr als jede Animation. | Vibration bei Perfekt und beim Verbrennen, mit der Combo steigende Tonhöhe, Aufblitzen und Partikel. |
 
@@ -85,7 +100,7 @@ Das Spiel bleibt unbegrenzt spielbar – begrenzt ist nur der Coin-Ertrag.
 
 Alle erspielbaren Coins laufen über eine einzige Funktion (`grantCoins`), die
 die Tagesobergrenze durchsetzt. Missionen sind dadurch kein zusätzlicher
-Kanal, sondern nur ein anderer Weg zum selben Tageskontingent von 20 Coins.
+Kanal, sondern nur ein anderer Weg zum selben Tageskontingent von 10 Coins.
 Serie und Rang zahlen überhaupt nichts aus – sie wirken über Status. Ein
 Test hält das fest: Missionen bringen bei ausgeschöpftem Tageslimit null
 Coins.
@@ -97,10 +112,10 @@ Wiederkommen sein, kein Automatismus.
 
 | Element | Regel |
 | --- | --- |
-| Coins | 2.000 Spielpunkte = 1 Loco Coin (wird abgerundet) |
-| Tagesobergrenze | höchstens 20 erspielte Coins pro Kalendertag |
-| Tagesbonus | +5 Coins fürs Reinschauen (zählt nicht gegen die Obergrenze) |
-| Missionen | 3 Aufgaben täglich, je 3 Coins – innerhalb der Obergrenze |
+| Coins | 4.000 Spielpunkte = 1 Loco Coin (wird abgerundet) |
+| Tagesobergrenze | höchstens 10 erspielte Coins pro Kalendertag |
+| Tagesbonus | +2 Coins fürs Reinschauen (zählt nicht gegen die Obergrenze) |
+| Missionen | 3 Aufgaben täglich, je 2 Coins – innerhalb der Obergrenze |
 | Offene Gutscheine | nur einer gleichzeitig |
 | Gültigkeit | 14 Tage ab Einlösung |
 | Code | Format `LOCO-XXXX-XXXX`, ohne verwechselbare Zeichen (I, O, 0, 1) |
@@ -109,11 +124,11 @@ Wiederkommen sein, kein Automatismus.
 
 | Belohnung | Coins | Bedingung |
 | --- | --- | --- |
-| Dip nach Wahl | 100 | zu jeder Bestellung |
-| Loco Fries | 200 | ab 10 € Bestellwert |
-| 4 Chicken Tenders | 350 | ab 15 € Bestellwert |
-| Loco Burger für 1 € | 600 | ab 15 € Bestellwert |
-| 20 % auf den Bucket | 900 | ab 25 € Bestellwert |
+| Dip nach Wahl | 150 | zu jeder Bestellung |
+| Loco Fries | 300 | ab 10 € Bestellwert |
+| 4 Chicken Tenders | 550 | ab 15 € Bestellwert |
+| Loco Burger für 1 € | 900 | ab 15 € Bestellwert |
+| 20 % auf den Bucket | 1.500 | ab 25 € Bestellwert |
 
 ### Warum der Laden dabei nicht draufzahlt
 
@@ -122,17 +137,20 @@ Vier Bremsen greifen ineinander:
 1. **Punkte gibt es nur für Können.** Spielzeit allein bringt nichts – Punkte
    entstehen ausschließlich durch perfekt getroffene Züge. Eine Anfängerrunde
    liegt bei ein paar hundert Punkten, eine sehr gute bei einigen tausend.
-2. **Hoher Umrechnungskurs.** 2.000 Punkte pro Coin. Eine durchschnittliche
-   Runde bringt 1–3 Coins.
-3. **Tagesobergrenze.** Mehr als 20 erspielte Coins pro Tag sind nicht
-   möglich, Dauergrinden lohnt also nicht. Punkte und Rekorde zählen weiter,
-   nur Coins nicht.
+2. **Hoher Umrechnungskurs.** 4.000 Punkte pro Coin. Eine durchschnittliche
+   Runde bringt 0–2 Coins.
+3. **Tagesobergrenze.** Mehr als 10 erspielte Coins pro Tag sind nicht
+   möglich, Dauergrinden lohnt also nicht – auch nicht über acht Spiele
+   hinweg, denn die Obergrenze gilt für alle gemeinsam. Punkte, Bestwerte und
+   Ränge zählen weiter, nur Coins nicht.
 4. **Mindestbestellwert.** Außer dem Dip hängt jede Belohnung an einem
    Bestellwert – hinter jedem eingelösten Gutschein steht Umsatz.
 
-In der Praxis heißt das: Wer fast täglich spielt, kommt nach etwa einer Woche
-zum ersten Dip; die großen Belohnungen brauchen mehrere Wochen. Wer nur
-gelegentlich spielt, entsprechend länger.
+In der Praxis heißt das: Wer fast täglich spielt, kommt nach rund zwei bis
+drei Wochen zum ersten Dip; der Bucket-Rabatt liegt bei mehreren Monaten. Wer
+nur gelegentlich spielt, entsprechend länger. Höchstmögliche Ausschüttung sind
+12 Coins pro Tag (10 erspielt plus 2 Tagesbonus) – mehr geht selbst bei
+stundenlangem Spielen nicht.
 
 Zum Nachjustieren genügen die Konstanten am Anfang von `src/js/economy.js`
 (`POINTS_PER_COIN`, `DAILY_COIN_CAP`, `DAILY_BONUS_COINS`,
@@ -153,7 +171,11 @@ assets/coin.svg         Loco Coin
 assets/rewards/*.svg    Icons des Belohnungskatalogs
 src/css/styles.css      Styles, Marken-Werte zentral als CSS-Variablen
 src/js/app.js           Navigation, Zustand, Anbindung Spiel <-> Profil
-src/js/game.js          Spiel "Loco Fryer" (Canvas, Timing, Rendering)
+src/js/game.js          Fabrik: erzeugt das Spiel zum gewählten Modus
+src/js/modes.js         Katalog der acht Spiele (nur Daten, testbar)
+src/js/games/base.js    gemeinsame Basis aller Spiele
+src/js/games/icons.js   Speisen-Icons für alle Spiele
+src/js/games/*.js       die acht Spielmechaniken
 src/js/economy.js       Coins, Belohnungen, Gutscheine, Serie, Ränge
 src/js/missions.js      Tagesmissionen (frei von Browser-APIs, testbar)
 src/js/sharecard.js     Ergebniskarte 9:16 zum Teilen
@@ -163,6 +185,7 @@ scripts/serve.mjs       Entwicklungsserver ohne Abhängigkeiten
 scripts/build-preview.mjs  baut die Vorschau als Einzeldatei
 test/economy.test.mjs   Unit-Tests der Spiel-Ökonomie
 test/missions.test.mjs  Unit-Tests für Missionen, Serie, Ränge, Tageslimit
+test/modes.test.mjs     prüft Vollständigkeit und Eigenständigkeit der Spiele
 ```
 
 `economy.js` enthält die gesamte Wirtschaftslogik als reine Funktionen ohne

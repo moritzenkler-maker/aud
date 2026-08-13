@@ -637,6 +637,100 @@ body.is-playing .tabbar {
   background: #2f2620;
 }
 
+/* ---------------------------------------------------------- Spielwahl */
+
+.modes {
+  display: grid;
+  gap: 12px;
+}
+
+.mode {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius);
+  padding: 12px;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mode:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.mode--current {
+  background: var(--yellow);
+}
+
+.mode__icon {
+  flex: none;
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+}
+
+.mode--current .mode__icon {
+  background: var(--paper);
+}
+
+.mode__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mode__title {
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 17px;
+}
+
+.mode__subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.mode__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.mode__skill {
+  background: var(--red);
+  color: var(--paper);
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.mode__best {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
 /* --------------------------------------------------------- Belohnungen */
 
 .rewards {

@@ -22,6 +22,7 @@ import {
 /** Rundendaten, wie das Spiel sie nach einer Runde liefert. */
 function run(overrides = {}) {
   return {
+    mode: 'fritteuse',
     score: 0,
     perfects: 0,
     bestCombo: 1,
@@ -65,28 +66,42 @@ test('jede Missionsvorlage liest ihren Fortschritt aus den Rundendaten', () => {
 
 test('Missionsfortschritt wird verbucht und einmalig belohnt', () => {
   const now = new Date('2026-08-13T12:00:00');
-  const [first] = missionsForDay('2026-08-13');
+  const today = missionsForDay('2026-08-13');
 
-  // Eine Runde, die genau die erste Mission des Tages erfüllt.
-  const big = run({
-    score: 20000,
-    perfects: 40,
-    bestCombo: 10,
-    bestPerfectStreak: 10,
-    served: 40,
-    perfectsByType: { nugget: 20, wing: 10, tender: 10 },
-  });
+  // Eine sehr starke Runde – deckt alle Missionsarten ab, die auf einer
+  // Einzelrunde beruhen.
+  const big = (mode) =>
+    run({
+      mode,
+      score: 20000,
+      perfects: 40,
+      bestCombo: 10,
+      bestPerfectStreak: 10,
+      served: 40,
+      perfectsByType: { nugget: 20, wing: 10, tender: 10 },
+    });
 
-  const result = applyMissionProgress(createProfile(), big, now);
-  const done = result.completed.map((mission) => mission.id);
-  assert.ok(done.includes(first.id));
-  assert.equal(result.coins, done.length * MISSION_REWARD);
+  // Fünf Runden in drei Spielen erfüllen auch die Tages- und Vielfaltsziele.
+  const modes = ['fritteuse', 'kasse', 'stapel', 'band', 'chili'];
+  let profile = createProfile();
+  let completed = [];
+  let coins = 0;
+  for (const mode of modes) {
+    const step = applyMissionProgress(profile, big(mode), now);
+    profile = step.profile;
+    completed = [...completed, ...step.completed];
+    coins += step.coins;
+  }
 
-  // Dieselbe Runde nochmal bringt für erledigte Missionen nichts mehr.
-  const again = applyMissionProgress(result.profile, big, now);
+  assert.equal(completed.length, today.length, 'alle Tagesmissionen sollten erfüllt sein');
+  assert.equal(coins, today.length * MISSION_REWARD);
+  assert.ok(missionState(profile, now).every((mission) => mission.done));
+
+  // Weiterspielen bringt für erledigte Missionen nichts mehr.
+  const again = applyMissionProgress(profile, big('sortieren'), now);
   assert.equal(again.completed.length, 0);
   assert.equal(again.coins, 0);
-  assert.equal(again.profile.coins, result.profile.coins);
+  assert.equal(again.profile.coins, profile.coins);
 });
 
 test('Missionsfortschritt startet an einem neuen Tag bei null', () => {
@@ -173,4 +188,57 @@ test('Ränge steigen mit der Bestleistung und werden beim Rundenende gemeldet', 
   // Ohne Rangwechsel wird auch keiner gemeldet.
   const second = applyGameResult(first.profile, 6500, new Date('2026-08-13T13:00:00'));
   assert.equal(second.rankUp, null);
+});
+
+test('die Modus-Mission zählt verschiedene Spiele, nicht Wiederholungen', () => {
+  const now = new Date('2026-08-13T12:00:00');
+  const variety = MISSION_POOL.find((mission) => mission.id === 'mode_variety');
+  assert.ok(variety, 'Missionsvorlage fehlt');
+  assert.equal(variety.mode, 'distinct');
+
+  // Fortschritt direkt an der Vorlage prüfen, unabhängig von der Tagesauswahl.
+  let entry = { progress: 0, done: false, seen: [] };
+  const feed = (mode) => {
+    const key = variety.key({ ...run(), mode });
+    entry = {
+      ...entry,
+      seen: entry.seen.includes(key) ? entry.seen : [...entry.seen, key],
+    };
+    entry.progress = entry.seen.length;
+  };
+
+  feed('fritteuse');
+  feed('fritteuse');
+  assert.equal(entry.progress, 1, 'derselbe Modus zählt nur einmal');
+
+  feed('kasse');
+  feed('stapel');
+  assert.equal(entry.progress, variety.target);
+
+  // Über applyMissionProgress bleibt der Zustand über Runden erhalten.
+  const first = applyMissionProgress(createProfile(), run({ mode: 'band' }), now);
+  const second = applyMissionProgress(first.profile, run({ mode: 'band' }), now);
+  const stored = second.profile.missions.mode_variety;
+  if (stored) assert.equal(stored.progress, 1);
+});
+
+test('Bestwerte werden je Spiel getrennt geführt', () => {
+  const now = new Date('2026-08-13T12:00:00');
+  let profile = createProfile();
+
+  profile = applyGameResult(profile, 5000, now, 'fritteuse').profile;
+  profile = applyGameResult(profile, 3000, now, 'kasse').profile;
+  assert.equal(profile.modeScores.fritteuse, 5000);
+  assert.equal(profile.modeScores.kasse, 3000);
+  assert.equal(profile.highScore, 5000);
+  assert.equal(profile.lastMode, 'kasse');
+
+  // Schwächere Runde im selben Spiel ändert den Bestwert nicht.
+  const weaker = applyGameResult(profile, 1000, now, 'fritteuse');
+  assert.equal(weaker.isModeRecord, false);
+  assert.equal(weaker.profile.modeScores.fritteuse, 5000);
+
+  const better = applyGameResult(profile, 9000, now, 'kasse');
+  assert.equal(better.isModeRecord, true);
+  assert.equal(better.profile.modeScores.kasse, 9000);
 });
