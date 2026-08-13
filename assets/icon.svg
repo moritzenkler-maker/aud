@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Loco Chicken">
+  <!-- App-Icon im Stil des Marken-Badges: gelber Kreis, roter Ring, Hahn mit Sonnenbrille.
+       Platzhalter – bei Bedarf durch die offizielle Logodatei ersetzen. -->
+  <circle cx="256" cy="256" r="252" fill="#D91F26" />
+  <circle cx="256" cy="256" r="228" fill="#FFDD00" />
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#D91F26" stroke-width="14" />
+
+  <g transform="translate(256 262) scale(0.82) translate(-256 -256)">
+  <!-- Kamm -->
+  <path
+    d="M188 150 c-6-44 18-58 30-40 4-40 34-44 44-20 14-30 44-26 48 4 22-18 44 0 34 34 z"
+    fill="#D91F26"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+
+  <!-- Kopf -->
+  <ellipse cx="256" cy="256" rx="112" ry="106" fill="#B0672F" stroke="#12100E" stroke-width="12" />
+
+  <!-- Kehllappen -->
+  <path
+    d="M232 330 c-16 26 4 46 24 40 20-6 24-30 12-46 z"
+    fill="#D91F26"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+
+  <!-- Sonnenbrille -->
+  <path
+    d="M150 216 h212 v18 c0 30-26 46-56 46 -26 0-40-14-46-30 -6 16-20 30-46 30 -30 0-56-16-56-46 z"
+    fill="#12100E"
+  />
+  <path d="M144 208 h224 v20 h-224 z" fill="#12100E" />
+  <path d="M176 232 h44 v16 c0 10-10 16-22 16 -12 0-22-6-22-16 z" fill="#3A3A3A" opacity="0.7" />
+
+  <!-- Schnabel mit Grinsen -->
+  <path
+    d="M196 288 h120 c14 0 22 12 14 22 -18 22-56 34-90 26 -26-6-40-20-44-34 -2-8 4-14 14-14 z"
+    fill="#F5C400"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+  <path d="M206 306 h108 c-14 16-38 24-60 24 -22 0-38-8-48-24 z" fill="#FFFFFF" />
+  <path d="M236 306 v22 M266 306 v24 M296 306 v18" stroke="#12100E" stroke-width="7" />
+  </g>
+</svg>

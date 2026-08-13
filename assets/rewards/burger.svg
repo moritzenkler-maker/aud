@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Loco Burger">
+  <g stroke="#12100e" stroke-width="4" stroke-linejoin="round">
+    <path d="M8 28 c0-13 11-20 24-20 s24 7 24 20 z" fill="#e0a75a" />
+    <path d="M6 40 l52 0 -6 8 -40 0 z" fill="#f7b731" />
+    <rect x="6" y="30" width="52" height="11" rx="5" fill="#c87d15" />
+    <path d="M8 50 h48 a6 6 0 0 1 -6 8 h-36 a6 6 0 0 1 -6 -8 z" fill="#e0a75a" />
+  </g>
+  <g fill="#fff6dc">
+    <ellipse cx="24" cy="17" rx="3.5" ry="2.2" />
+    <ellipse cx="38" cy="14" rx="3.5" ry="2.2" />
+    <ellipse cx="31" cy="23" rx="3.5" ry="2.2" />
+  </g>
+</svg>

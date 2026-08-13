@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Chicken Bucket">
+  <defs>
+    <clipPath id="bucket-body">
+      <path d="M10 22 h44 l-6 34 a4 4 0 0 1 -4 3 h-24 a4 4 0 0 1 -4 -3 z" />
+    </clipPath>
+  </defs>
+
+  <!-- Hähnchenteile über dem Rand -->
+  <g stroke="#12100e" stroke-width="4" stroke-linejoin="round">
+    <ellipse cx="22" cy="16" rx="9" ry="7" fill="#f0a827" transform="rotate(-14 22 16)" />
+    <ellipse cx="40" cy="14" rx="9" ry="7" fill="#c87d15" transform="rotate(12 40 14)" />
+  </g>
+
+  <!-- Becher -->
+  <path d="M10 22 h44 l-6 34 a4 4 0 0 1 -4 3 h-24 a4 4 0 0 1 -4 -3 z" fill="#fff6dc" />
+  <g clip-path="url(#bucket-body)">
+    <rect x="8" y="40" width="48" height="22" fill="#d91f26" />
+    <g fill="#ffdd00">
+      <path d="M18 62 q4-12 0-22 q8 6 8 22 z" />
+      <path d="M32 62 q4-12 0-22 q8 6 8 22 z" />
+      <path d="M46 62 q4-12 0-22 q8 6 8 22 z" />
+    </g>
+  </g>
+  <path
+    d="M10 22 h44 l-6 34 a4 4 0 0 1 -4 3 h-24 a4 4 0 0 1 -4 -3 z"
+    fill="none"
+    stroke="#12100e"
+    stroke-width="4"
+    stroke-linejoin="round"
+  />
+  <rect x="8" y="18" width="48" height="9" rx="4" fill="#d91f26" stroke="#12100e" stroke-width="4" />
+</svg>

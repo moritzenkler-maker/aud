@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Dip">
+  <!-- Dip-Becher mit farbigem Deckel wie bei Truffle Mayo -->
+  <g stroke="#12100e" stroke-width="4" stroke-linejoin="round">
+    <path d="M16 30 h32 l-4 24 a4 4 0 0 1 -4 3 h-16 a4 4 0 0 1 -4 -3 z" fill="#fff6dc" />
+    <ellipse cx="32" cy="24" rx="22" ry="9" fill="#2e5fa3" />
+    <ellipse cx="32" cy="21" rx="22" ry="9" fill="#3a72c0" />
+  </g>
+  <ellipse cx="32" cy="21" rx="12" ry="4.5" fill="#2e5fa3" />
+  <path d="M22 44 h20" stroke="#d91f26" stroke-width="4" stroke-linecap="round" />
+</svg>

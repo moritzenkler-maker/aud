@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Loco Chicken Deutschland">
+  <!-- Marken-Badge für große Flächen (Hero, Splash). Der Schriftzug läuft wie im
+       Original auf dem unteren Kreisbogen. Platzhalter – bei Bedarf durch die
+       offizielle Logodatei ersetzen. -->
+  <defs>
+    <path id="claim-arc" d="M 86 268 a 170 170 0 0 0 340 0" />
+  </defs>
+
+  <circle cx="256" cy="256" r="252" fill="#D91F26" />
+  <circle cx="256" cy="256" r="228" fill="#FFDD00" />
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#D91F26" stroke-width="14" />
+
+  <!-- Kamm -->
+  <path
+    d="M186 138 c-6-46 18-60 30-42 4-42 34-46 44-20 14-32 44-28 48 4 22-18 44 0 34 36 z"
+    fill="#D91F26"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+
+  <!-- Kopf -->
+  <ellipse cx="256" cy="236" rx="106" ry="100" fill="#B0672F" stroke="#12100E" stroke-width="12" />
+
+  <!-- Kehllappen -->
+  <path
+    d="M234 306 c-16 26 4 46 24 40 20-6 24-30 12-46 z"
+    fill="#D91F26"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+
+  <!-- Sonnenbrille -->
+  <path
+    d="M156 196 h200 v18 c0 30-24 46-52 46 -24 0-38-14-44-30 -6 16-20 30-44 30 -28 0-52-16-52-46 z"
+    fill="#12100E"
+  />
+  <path d="M150 188 h212 v20 h-212 z" fill="#12100E" />
+  <path d="M180 212 h40 v16 c0 10-9 16-20 16 -11 0-20-6-20-16 z" fill="#3A3A3A" opacity="0.7" />
+
+  <!-- Schnabel mit Grinsen -->
+  <path
+    d="M200 266 h112 c14 0 21 12 13 21 -17 21-53 32-85 25 -24-6-38-19-42-32 -2-8 4-14 13-14 z"
+    fill="#F5C400"
+    stroke="#12100E"
+    stroke-width="12"
+    stroke-linejoin="round"
+  />
+  <path d="M210 283 h100 c-13 15-35 23-56 23 -21 0-35-8-44-23 z" fill="#FFFFFF" />
+  <path d="M238 283 v21 M266 283 v23 M294 283 v17" stroke="#12100E" stroke-width="7" />
+
+  <text
+    font-family="'Arial Black', 'Segoe UI', Impact, sans-serif"
+    font-size="62"
+    font-weight="900"
+    fill="#D91F26"
+    stroke="#12100E"
+    stroke-width="3"
+    letter-spacing="4"
+    text-anchor="middle"
+  >
+    <textPath href="#claim-arc" startOffset="50%">LOCO CHICKEN</textPath>
+  </text>
+</svg>

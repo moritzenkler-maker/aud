@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#ffdd00" />
+    <meta
+      name="description"
+      content="Loco Chicken Deutschland – acht Küchenspiele, Loco Coins sammeln und Gutscheine sichern."
+    />
+    <title>Loco Chicken – Loco Games</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/icon.svg" />
+    <link rel="stylesheet" href="./src/css/styles.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- ------------------------------------------------------- Startseite -->
+      <section class="screen screen--active" id="screen-home" aria-label="Startseite">
+        <header class="topbar">
+          <div class="brand">
+            <img class="brand__logo" src="./assets/icon.svg" alt="" width="40" height="40" />
+            <div>
+              <p class="brand__name">Loco Chicken</p>
+              <p class="brand__claim" id="brand-claim">Deutschland</p>
+            </div>
+          </div>
+          <button class="icon-button" id="mute-button" type="button" aria-label="Ton an/aus">
+            🔊
+          </button>
+        </header>
+
+        <div class="wallet">
+          <span class="wallet__label">Dein Guthaben</span>
+          <p class="wallet__value"><span id="home-coins">0</span><img class="coin-icon coin-icon--lg" src="./assets/coin.svg" alt="Loco Coins" /></p>
+          <span class="wallet__hint">Loco Coins</span>
+          <p class="wallet__daily" id="wallet-daily"></p>
+        </div>
+
+        <button class="bonus-card" id="bonus-button" type="button">
+          <span class="bonus-card__icon">🎁</span>
+          <span class="bonus-card__text">
+            <strong id="bonus-title">Tagesbonus abholen</strong>
+            <small id="bonus-subtitle">Jeden Tag neu</small>
+          </span>
+        </button>
+
+        <div class="hero">
+          <img class="hero__logo" src="./assets/logo.svg" alt="Loco Chicken" width="108" height="108" />
+          <h1 class="hero__title">Loco&nbsp;Games</h1>
+          <p class="hero__text">
+            Acht Spiele hinter dem Tresen – Timing, Gedächtnis, Reaktion, Kopfrechnen. Punkte gibt
+            es nur für saubere Züge, und aus Punkten werden Loco Coins.
+          </p>
+          <button class="button button--primary button--big" id="play-button" type="button">
+            <span id="play-label">Jetzt spielen</span>
+          </button>
+          <button class="button button--ghost" id="modes-button" type="button">
+            Alle 8 Spiele
+          </button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat__value" id="home-highscore">0</span>
+            <span class="stat__label">Rekord</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value" id="home-streak">0</span>
+            <span class="stat__label">Tage Serie</span>
+          </div>
+          <div class="stat">
+            <span class="stat__value stat__value--small" id="home-rank">–</span>
+            <span class="stat__label">Rang</span>
+          </div>
+        </div>
+
+        <p class="streak-note" id="streak-note" hidden></p>
+
+        <section class="protein-card">
+          <img class="protein-card__icon" src="./assets/rewards/whey.svg" alt="" width="52" height="52" />
+          <div class="protein-card__body">
+            <span class="protein-card__kicker" id="protein-kicker">High Protein</span>
+            <p class="protein-card__title" id="protein-title"></p>
+            <p class="protein-card__text" id="protein-text"></p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">Missionen heute</h2>
+          <div class="missions" id="mission-list"></div>
+          <p class="missions__note" id="mission-note"></p>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">In allen Spielen gleich</h2>
+          <ul class="rules">
+            <li>
+              <span class="rules__dot rules__dot--gold"></span>
+              <span><strong>Sauberer Zug:</strong> volle Punkte, die Combo steigt bis x8.</span>
+            </li>
+            <li>
+              <span class="rules__dot rules__dot--pale"></span>
+              <span><strong>Ungenau:</strong> kaum Punkte, die Combo fällt auf x1 zurück.</span>
+            </li>
+            <li>
+              <span class="rules__dot rules__dot--burnt"></span>
+              <span><strong>Fehler:</strong> drei davon und die Schicht ist vorbei.</span>
+            </li>
+          </ul>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel__title">Deine besten Runden</h2>
+          <ol class="scorelist" id="score-list">
+            <li class="scorelist__empty">Noch keine Runde gespielt.</li>
+          </ol>
+        </section>
+      </section>
+
+      <!-- --------------------------------------------------- Spielauswahl -->
+      <section class="screen" id="screen-modes" aria-label="Spiele">
+        <header class="topbar">
+          <h2 class="topbar__title">Spiele</h2>
+          <span class="topbar__coins"><span id="modes-coins">0</span><img class="coin-icon" src="./assets/coin.svg" alt="Loco Coins" /></span>
+        </header>
+        <p class="section-hint">
+          Acht eigenständige Spiele. Jedes hat seinen eigenen Bestwert – Coins zählen überall
+          gegen dasselbe Tageslimit.
+        </p>
+        <div class="modes" id="mode-grid"></div>
+      </section>
+
+      <!-- ------------------------------------------------------------ Spiel -->
+      <section class="screen screen--game" id="screen-game" aria-label="Spiel">
+        <div class="hud">
+          <button class="icon-button" id="quit-button" type="button" aria-label="Spiel beenden">
+            ✕
+          </button>
+          <div class="hud__score">
+            <span id="hud-score">0</span>
+            <small id="hud-mode">Punkte</small>
+          </div>
+          <div class="hud__right">
+            <span class="hud__combo" id="hud-combo">x1</span>
+            <span class="hud__strikes" id="hud-strikes"></span>
+          </div>
+        </div>
+
+        <canvas id="game-canvas"></canvas>
+
+        <div class="overlay" id="game-overlay" hidden>
+          <div class="overlay__box">
+            <h2 id="overlay-title">Pause</h2>
+            <p id="overlay-text">Tippe auf Weiter, um zurück ins Rennen zu kommen.</p>
+            <button class="button button--primary" id="overlay-resume" type="button">Weiter</button>
+            <button class="button button--ghost" id="overlay-quit" type="button">Beenden</button>
+          </div>
+        </div>
+
+        <div class="controls">
+          <p class="controls__hint" id="controls-hint"></p>
+          <button class="control control--pause" id="pause-button" type="button" aria-label="Pause">
+            ❚❚
+          </button>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------ Rundenende -->
+      <section class="screen" id="screen-over" aria-label="Rundenende">
+        <div class="result">
+          <p class="result__badge" id="result-badge" hidden>Neuer Rekord! 🏆</p>
+          <h2 class="result__title" id="result-title">Runde beendet</h2>
+          <p class="result__score" id="result-score">0</p>
+          <p class="result__label">Punkte</p>
+
+          <div class="result__rows">
+            <div class="result__row">
+              <span>Perfekt gezogen</span><strong id="result-perfects">0</strong>
+            </div>
+            <div class="result__row">
+              <span>Knappster Fehlversuch</span><strong id="result-miss">–</strong>
+            </div>
+            <div class="result__row">
+              <span>Verdiente Coins</span><strong id="result-coins">+0</strong>
+            </div>
+            <div class="result__row">
+              <span>Neuer Kontostand</span><strong id="result-balance">0</strong>
+            </div>
+            <p class="result__note" id="result-note" hidden></p>
+          </div>
+
+          <div class="result__missions" id="result-missions" hidden></div>
+
+          <button class="button button--primary button--big" id="again-button" type="button">
+            Sofort nochmal
+          </button>
+          <button class="button button--share" id="share-button" type="button">
+            Ergebnis teilen
+          </button>
+          <button class="button button--ghost" id="other-mode-button" type="button">
+            Anderes Spiel
+          </button>
+          <button class="button button--ghost" id="to-rewards-button" type="button">
+            Belohnungen ansehen
+          </button>
+          <button class="button button--ghost" id="to-home-button" type="button">Startseite</button>
+        </div>
+      </section>
+
+      <!-- ------------------------------------------------------ Belohnungen -->
+      <section class="screen" id="screen-rewards" aria-label="Belohnungen">
+        <header class="topbar">
+          <h2 class="topbar__title">Belohnungen</h2>
+          <span class="topbar__coins"><span id="rewards-coins">0</span><img class="coin-icon" src="./assets/coin.svg" alt="Loco Coins" /></span>
+        </header>
+
+        <p class="section-hint">
+          Coins gegen Gutscheine tauschen und im Loco Chicken Restaurant einlösen.
+        </p>
+
+        <div class="rewards" id="rewards-list"></div>
+
+        <section class="panel">
+          <h2 class="panel__title">Deine Gutscheine</h2>
+          <div class="coupons" id="coupon-list">
+            <p class="scorelist__empty">Noch keine Gutscheine eingelöst.</p>
+          </div>
+        </section>
+
+        <button class="button button--danger-ghost" id="reset-button" type="button">
+          Fortschritt zurücksetzen
+        </button>
+      </section>
+    </div>
+
+    <!-- ------------------------------------------------------------- Navi -->
+    <nav class="tabbar" id="tabbar">
+      <button class="tab tab--active" data-screen="home" type="button">
+        <span aria-hidden="true">🏠</span><span>Start</span>
+      </button>
+      <button class="tab" data-screen="play" type="button">
+        <span aria-hidden="true">🎮</span><span>Spiele</span>
+      </button>
+      <button class="tab" data-screen="rewards" type="button">
+        <span aria-hidden="true">🎟️</span><span>Belohnungen</span>
+      </button>
+    </nav>
+
+    <div class="sheet" id="share-sheet" hidden>
+      <div class="sheet__box">
+        <h2 class="sheet__title">Ergebnis teilen</h2>
+        <img class="sheet__image" id="share-image" alt="Ergebniskarte zum Teilen" />
+        <button class="button button--primary" id="share-send" type="button">Teilen</button>
+        <button class="button button--ghost" id="share-close" type="button">Schließen</button>
+        <p class="sheet__hint">
+          Tipp: Bild lange gedrückt halten, um es zu speichern – passt genau in Story und Reel.
+        </p>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <script type="module" src="./src/js/app.js"></script>
+  </body>
+</html>
