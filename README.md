@@ -13,8 +13,9 @@ Verpackung und der Hahn mit Sonnenbrille als Spielfigur.
 ## Schnellstart
 
 ```bash
-npm start     # startet einen lokalen Server auf http://localhost:5173
-npm test      # führt die Unit-Tests der Spiel-Ökonomie aus
+npm start            # startet einen lokalen Server auf http://localhost:5173
+npm test             # führt die Unit-Tests der Spiel-Ökonomie aus
+npm run build:preview # baut dist/preview.html als teilbare Einzeldatei
 ```
 
 Für Node ab Version 20. Alternativ genügt jeder statische Webserver, der das
@@ -70,12 +71,24 @@ src/js/economy.js       Coins, Belohnungen, Gutscheine (frei von Browser-APIs)
 src/js/storage.js       Persistenz im localStorage
 src/js/audio.js         synthetisierte Sounds via Web Audio API
 scripts/serve.mjs       Entwicklungsserver ohne Abhängigkeiten
+scripts/build-preview.mjs  baut die Vorschau als Einzeldatei
 test/economy.test.mjs   Unit-Tests der Spiel-Ökonomie
 ```
 
 `economy.js` enthält die gesamte Wirtschaftslogik als reine Funktionen ohne
 DOM-Zugriff. Dadurch ist sie unter Node testbar und lässt sich später
 unverändert gegen ein Backend austauschen.
+
+## Vorschau zum Testen
+
+`npm run build:preview` erzeugt `dist/preview.html`: die komplette App in einer
+einzigen Datei, mit eingebettetem CSS, JavaScript und allen Grafiken als
+data:-URI. Die Datei braucht weder Server noch Internet und lässt sich per
+Doppelklick im Browser öffnen oder weitergeben.
+
+Die Vorschau wird immer aus den Quellen gebaut und kann deshalb nicht vom
+Code abweichen. Der Service Worker ist darin ausgespart, weil Offline-Caching
+nur für die ausgelieferte App sinnvoll ist. `dist/` liegt in `.gitignore`.
 
 ## Corporate Design
 

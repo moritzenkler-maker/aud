@@ -29,6 +29,7 @@ const SCREENS = {
 let profile = loadProfile();
 let game = null;
 let toastTimer = null;
+let resetTimer = null;
 
 /* ------------------------------------------------------------ Hilfsmittel */
 
@@ -71,6 +72,8 @@ function showScreen(name) {
   }
   if (name === 'home') renderHome();
   if (name === 'rewards') renderRewards();
+  // Ein scharfgeschalteter Reset gilt nur, solange der Screen sichtbar bleibt.
+  if (name !== 'rewards') disarmReset();
   window.scrollTo({ top: 0 });
 }
 
@@ -269,15 +272,34 @@ function handleCouponUsed(code) {
   renderRewards();
 }
 
+/**
+ * Zurücksetzen in zwei Schritten: Der erste Tipp fragt nach, der zweite löscht.
+ * Bewusst ohne `window.confirm`, weil Systemdialoge in eingebetteten Ansichten
+ * (Vorschau, In-App-Browser) blockiert werden können.
+ */
 function handleReset() {
-  const confirmed = window.confirm(
-    'Wirklich alle Coins, Gutscheine und Rekorde löschen? Das lässt sich nicht rückgängig machen.',
-  );
-  if (!confirmed) return;
+  const button = $('#reset-button');
+
+  if (button.dataset.armed !== 'true') {
+    button.dataset.armed = 'true';
+    button.textContent = 'Wirklich alles löschen? Nochmal tippen';
+    clearTimeout(resetTimer);
+    resetTimer = setTimeout(disarmReset, 5000);
+    return;
+  }
+
+  disarmReset();
   profile = resetProfile();
   toast('Fortschritt zurückgesetzt.');
   renderRewards();
   renderHome();
+}
+
+function disarmReset() {
+  clearTimeout(resetTimer);
+  const button = $('#reset-button');
+  button.dataset.armed = 'false';
+  button.textContent = 'Fortschritt zurücksetzen';
 }
 
 function updateMuteButton() {
