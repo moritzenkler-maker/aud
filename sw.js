@@ -17,6 +17,8 @@ const ASSETS = [
   './src/js/app.js',
   './src/js/game.js',
   './src/js/economy.js',
+  './src/js/missions.js',
+  './src/js/sharecard.js',
   './src/js/storage.js',
   './src/js/audio.js',
 ];

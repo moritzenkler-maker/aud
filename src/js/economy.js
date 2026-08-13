@@ -39,6 +39,28 @@ export const MAX_ACTIVE_COUPONS = 1;
 /** Gültigkeitsdauer eines eingelösten Gutscheins in Tagen. */
 export const COUPON_VALID_DAYS = 14;
 
+/**
+ * Ränge nach Bestleistung. Reiner Status – Ränge kosten nichts und geben
+ * nichts. Sie sind die Fortschrittsanzeige für alle, die noch weit von einem
+ * Gutschein entfernt sind.
+ */
+export const RANKS = [
+  { id: 'huelfe', title: 'Küchenhilfe', from: 0 },
+  { id: 'azubi', title: 'Fritteusen-Azubi', from: 5000 },
+  { id: 'frycook', title: 'Fry Cook', from: 15000 },
+  { id: 'chef', title: 'Chef de Fritteuse', from: 30000 },
+  { id: 'legende', title: 'Loco Legende', from: 60000 },
+];
+
+/** Aktueller Rang und – falls vorhanden – der nächste. */
+export function rankFor(highScore) {
+  const index = RANKS.reduce(
+    (best, rank, position) => (highScore >= rank.from ? position : best),
+    0,
+  );
+  return { current: RANKS[index], next: RANKS[index + 1] ?? null };
+}
+
 /** Belohnungskatalog. `id` wird persistiert und darf sich nicht ändern. */
 export const REWARDS = [
   {
@@ -129,8 +151,67 @@ export function createProfile() {
     lastBonusDay: null,
     coinDay: null,
     coinsToday: 0,
+    streak: 0,
+    bestStreak: 0,
+    lastPlayDay: null,
+    missionDay: null,
+    missions: {},
     scores: [],
     coupons: [],
+  };
+}
+
+/** Kalendertag als Zahl, um Abstände zwischen Tagen zu rechnen. */
+function dayNumber(date) {
+  return Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 86400000);
+}
+
+/**
+ * Verbucht, dass heute gespielt wurde, und pflegt die Tagesserie.
+ * Die Serie ist bewusst reiner Status: Sie zahlt keine Coins aus, sondern
+ * gibt einen Grund, morgen wiederzukommen.
+ */
+export function registerPlay(profile, now = new Date()) {
+  const today = dayKey(now);
+  if (profile.lastPlayDay === today) return profile;
+
+  const gapInDays = profile.lastPlayDay
+    ? dayNumber(now) - dayNumber(new Date(`${profile.lastPlayDay}T12:00:00`))
+    : null;
+  const streak = gapInDays === 1 ? profile.streak + 1 : 1;
+
+  return {
+    ...profile,
+    streak,
+    bestStreak: Math.max(profile.bestStreak ?? 0, streak),
+    lastPlayDay: today,
+  };
+}
+
+/** Ist die Serie noch am Leben, wenn heute nicht mehr gespielt wird? */
+export function streakAtRisk(profile, now = new Date()) {
+  return profile.streak > 0 && profile.lastPlayDay !== dayKey(now);
+}
+
+/**
+ * Schreibt Coins gut und respektiert dabei die Tagesobergrenze.
+ * Jede erspielbare Quelle (Runden, Missionen) läuft hier durch – dadurch
+ * kann keine neue Belohnungsmechanik die Obergrenze aushebeln.
+ */
+export function grantCoins(profile, amount, now = new Date()) {
+  const today = dayKey(now);
+  const usedToday = profile.coinDay === today ? profile.coinsToday : 0;
+  const granted = Math.max(0, Math.min(amount, DAILY_COIN_CAP - usedToday));
+
+  return {
+    profile: {
+      ...profile,
+      coins: profile.coins + granted,
+      coinDay: today,
+      coinsToday: usedToday + granted,
+    },
+    granted,
+    cappedAway: Math.max(0, amount - granted),
   };
 }
 
@@ -145,32 +226,37 @@ export function remainingDailyCoins(profile, now = new Date()) {
  * Gibt ein neues Profil sowie die Auswertung der Runde zurück.
  */
 export function applyGameResult(profile, score, now = new Date()) {
-  const today = dayKey(now);
-  const usedToday = profile.coinDay === today ? profile.coinsToday : 0;
-
   // Was die Runde wert wäre, und was die Tagesobergrenze davon übrig lässt.
   const gross = coinsForScore(score);
-  const earned = Math.min(gross, remainingDailyCoins(profile, now));
+  const { profile: paid, granted, cappedAway } = grantCoins(profile, gross, now);
 
   const isNewRecord = score > profile.highScore;
+  const rankBefore = rankFor(profile.highScore).current;
   const scores = [...profile.scores, { score, date: now.toISOString() }]
     .sort((a, b) => b.score - a.score)
     .slice(0, 10);
 
-  return {
-    profile: {
-      ...profile,
-      coins: profile.coins + earned,
-      coinDay: today,
-      coinsToday: usedToday + earned,
-      highScore: Math.max(profile.highScore, score),
+  const highScore = Math.max(profile.highScore, score);
+  const withRun = registerPlay(
+    {
+      ...paid,
+      highScore,
       gamesPlayed: profile.gamesPlayed + 1,
       scores,
     },
-    earned,
+    now,
+  );
+
+  const rankAfter = rankFor(highScore).current;
+
+  return {
+    profile: withRun,
+    earned: granted,
     gross,
-    cappedAway: gross - earned,
+    cappedAway,
     isNewRecord,
+    rankUp: rankAfter.id !== rankBefore.id ? rankAfter : null,
+    streak: withRun.streak,
   };
 }
 

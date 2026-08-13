@@ -54,6 +54,42 @@ von 18 % auf 7,5 % der Garzeit.
 Sämtliche Grafik wird prozedural auf ein Canvas gezeichnet – Edelstahlwand,
 Karo-Streifen, brodelndes Öl, Garringe und die Teile in jedem Garzustand.
 
+## Engagement-Mechaniken
+
+Die Auswahl orientiert sich daran, was in kurzformatig sozialisierten
+Zielgruppen nachweislich trägt – übernommen wurde nur, was zur Marke passt
+und die Ökonomie nicht aufweicht.
+
+### Was übernommen wurde
+
+| Mechanik | Wirkprinzip | Umsetzung |
+| --- | --- | --- |
+| **Kurze Runden mit Sofort-Neustart** | Die Entscheidung "noch eine Runde" darf keine Reibung haben. | Ergebnisbildschirm mit "Sofort nochmal" als erstem Button, Enter/Leertaste startet direkt. Die Erklärung vor der Runde erscheint nur einmal je Sitzung. |
+| **Beinahe-Treffer** | Knapp verfehlt motiviert stärker als klar verfehlt – vorausgesetzt, man sieht, wie knapp es war. | Jeder verfrühte Zug zeigt den Abstand in Sekunden ("0,18 s zu früh"), das Rundenergebnis nennt den knappsten Fehlversuch. |
+| **Sichtbare Könnenssteigerung** | Fortschritt muss spürbar sein, auch ohne Belohnung. | Combo bis x10, Perfekt-Serien mit Bonus, fünf Ränge von der Küchenhilfe zur Loco Legende. |
+| **Tagesserie** | Verlustaversion bindet stärker als Belohnung: Eine Serie will man nicht reißen lassen. | Serienzähler auf der Startseite, deutlicher Hinweis, wenn heute noch nicht gespielt wurde. Bewusst **ohne** Coin-Auszahlung. |
+| **Tagesmissionen** | Ein frisches Ziel pro Tag, unabhängig vom Punktestand – und etwas, worüber man reden kann. | Drei Aufgaben täglich, aus dem Datum abgeleitet und damit für alle Geräte gleich. |
+| **Teilbares Ergebnis** | Reichweite entsteht durch Weitergabe, nicht durch Werbung. | Ergebniskarte im Hochformat 9:16 mit Punktzahl, Combo, Rang und Serie – über das System-Teilen-Menü oder als Screenshot. |
+| **Spürbare Rückmeldung** | Auf dem Handy trägt Haptik und Ton mehr als jede Animation. | Vibration bei Perfekt und beim Verbrennen, mit der Combo steigende Tonhöhe, Aufblitzen und Partikel. |
+
+### Was bewusst nicht übernommen wurde
+
+Nicht übernommen wurden Lootboxen, Zufallsbelohnungen mit unbekanntem Wert
+und "Doppelt oder nichts"-Momente. Sie wirken kurzfristig am stärksten, sind
+aber glücksspielnah – bei einer Gastronomiemarke, deren Publikum teils
+minderjährig ist, wäre das weder rechtlich sauber noch dem Ruf zuträglich.
+Ebenfalls verzichtet: Energiesysteme, die zum Warten oder Bezahlen zwingen.
+Das Spiel bleibt unbegrenzt spielbar – begrenzt ist nur der Coin-Ertrag.
+
+### Warum das die Ökonomie nicht aufweicht
+
+Alle erspielbaren Coins laufen über eine einzige Funktion (`grantCoins`), die
+die Tagesobergrenze durchsetzt. Missionen sind dadurch kein zusätzlicher
+Kanal, sondern nur ein anderer Weg zum selben Tageskontingent von 20 Coins.
+Serie und Rang zahlen überhaupt nichts aus – sie wirken über Status. Ein
+Test hält das fest: Missionen bringen bei ausgeschöpftem Tageslimit null
+Coins.
+
 ## Loyalty-Mechanik
 
 Die Ökonomie ist bewusst streng ausgelegt: Ein Gutschein soll ein Grund zum
@@ -64,6 +100,7 @@ Wiederkommen sein, kein Automatismus.
 | Coins | 2.000 Spielpunkte = 1 Loco Coin (wird abgerundet) |
 | Tagesobergrenze | höchstens 20 erspielte Coins pro Kalendertag |
 | Tagesbonus | +5 Coins fürs Reinschauen (zählt nicht gegen die Obergrenze) |
+| Missionen | 3 Aufgaben täglich, je 3 Coins – innerhalb der Obergrenze |
 | Offene Gutscheine | nur einer gleichzeitig |
 | Gültigkeit | 14 Tage ab Einlösung |
 | Code | Format `LOCO-XXXX-XXXX`, ohne verwechselbare Zeichen (I, O, 0, 1) |
@@ -117,12 +154,15 @@ assets/rewards/*.svg    Icons des Belohnungskatalogs
 src/css/styles.css      Styles, Marken-Werte zentral als CSS-Variablen
 src/js/app.js           Navigation, Zustand, Anbindung Spiel <-> Profil
 src/js/game.js          Spiel "Loco Fryer" (Canvas, Timing, Rendering)
-src/js/economy.js       Coins, Belohnungen, Gutscheine (frei von Browser-APIs)
+src/js/economy.js       Coins, Belohnungen, Gutscheine, Serie, Ränge
+src/js/missions.js      Tagesmissionen (frei von Browser-APIs, testbar)
+src/js/sharecard.js     Ergebniskarte 9:16 zum Teilen
 src/js/storage.js       Persistenz im localStorage
 src/js/audio.js         synthetisierte Sounds via Web Audio API
 scripts/serve.mjs       Entwicklungsserver ohne Abhängigkeiten
 scripts/build-preview.mjs  baut die Vorschau als Einzeldatei
 test/economy.test.mjs   Unit-Tests der Spiel-Ökonomie
+test/missions.test.mjs  Unit-Tests für Missionen, Serie, Ränge, Tageslimit
 ```
 
 `economy.js` enthält die gesamte Wirtschaftslogik als reine Funktionen ohne

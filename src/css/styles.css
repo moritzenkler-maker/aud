@@ -442,6 +442,94 @@ body.is-playing .tabbar {
   letter-spacing: 1.2px;
 }
 
+.stat__value--small {
+  font-size: 14px;
+  line-height: 1.5;
+  padding-top: 4px;
+}
+
+/* Verlustaversion sichtbar machen: die Serie ist das, was reißen kann. */
+.streak-note {
+  margin: -6px 0 16px;
+  background: var(--ink);
+  color: var(--yellow);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.streak-note[hidden] {
+  display: none;
+}
+
+/* ------------------------------------------------------------ Missionen */
+
+.missions {
+  display: grid;
+  gap: 12px;
+}
+
+.mission {
+  background: var(--cream);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.mission--done {
+  background: var(--yellow);
+}
+
+.mission__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.mission__title {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.mission__reward {
+  flex: none;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--red);
+}
+
+.mission__bar {
+  height: 10px;
+  margin: 8px 0 4px;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mission__bar span {
+  display: block;
+  height: 100%;
+  background: var(--red);
+  transition: width 0.4s ease;
+}
+
+.mission__progress {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.missions__note {
+  margin: 12px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
 /* --------------------------------------------------------------- Panel */
 
 .panel {
@@ -1045,6 +1133,85 @@ body.is-playing .tabbar {
 
 .result__note[hidden] {
   display: none;
+}
+
+.result__missions {
+  margin: 0 0 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.result__missions[hidden] {
+  display: none;
+}
+
+.result__mission {
+  margin: 0;
+  background: var(--yellow);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.button--share {
+  background: var(--ink);
+  color: var(--yellow);
+}
+
+/* ------------------------------------------------------- Teilen-Ansicht */
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(18, 16, 14, 0.85);
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.sheet[hidden] {
+  display: none;
+}
+
+.sheet__box {
+  background: var(--paper);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  padding: 18px;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.sheet__title {
+  margin: 0 0 12px;
+  font-family: var(--display);
+  font-style: italic;
+  text-transform: uppercase;
+  font-size: 22px;
+  color: var(--red);
+}
+
+.sheet__image {
+  width: 100%;
+  max-height: 52vh;
+  object-fit: contain;
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  background: var(--yellow);
+}
+
+.sheet__hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* --------------------------------------------------------------- Tabbar */

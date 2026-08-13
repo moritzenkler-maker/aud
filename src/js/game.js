@@ -117,7 +117,12 @@ export default class LocoFryer {
     this.strikes = 0;
     this.combo = 1;
     this.perfectStreak = 0;
+    this.bestPerfectStreak = 0;
     this.perfects = 0;
+    this.perfectsByType = { nugget: 0, wing: 0, tender: 0 };
+    this.bestCombo = 1;
+    this.burns = 0;
+    this.closestMiss = null; // knappster verpasster Perfekt-Treffer in Sekunden
     this.served = 0;
     this.spawnTimer = 0.6;
     this.time = 0;
@@ -309,27 +314,53 @@ export default class LocoFryer {
     const perfectFrom = 1 - this.perfectWindow;
 
     if (piece.progress >= perfectFrom) {
-      this.scorePerfect(slotIndex, position);
-    } else if (piece.progress >= GOOD_ZONE_START) {
-      this.scoreGood(slotIndex, position);
+      this.scorePerfect(slotIndex, position, piece);
+      return;
+    }
+
+    // Wie knapp war es? Der Abstand zum goldenen Fenster in Sekunden ist die
+    // ehrlichste Rückmeldung – und der Grund, es sofort nochmal zu versuchen.
+    const missedBy = (perfectFrom - piece.progress) * piece.cookTime;
+    if (this.closestMiss === null || missedBy < this.closestMiss) this.closestMiss = missedBy;
+
+    if (piece.progress >= GOOD_ZONE_START) {
+      this.scoreGood(slotIndex, position, missedBy);
     } else {
-      this.scoreRaw(slotIndex, position);
+      this.scoreRaw(slotIndex, position, missedBy);
     }
   }
 
-  scorePerfect(slotIndex, position) {
+  /** Sekunden als "0,42 s" – kurz genug für ein Popup mitten im Spiel. */
+  formatMiss(seconds) {
+    return `${seconds.toFixed(2).replace('.', ',')} s zu früh`;
+  }
+
+  /** Kurzes Rütteln, wo das Gerät es kann. Auf dem Handy trägt das viel. */
+  buzz(pattern) {
+    try {
+      navigator.vibrate?.(pattern);
+    } catch {
+      /* Haptik ist optional */
+    }
+  }
+
+  scorePerfect(slotIndex, position, piece) {
     this.slots[slotIndex] = null;
     this.served += 1;
     this.perfects += 1;
+    this.perfectsByType[piece.type] = (this.perfectsByType[piece.type] ?? 0) + 1;
     this.perfectStreak += 1;
+    this.bestPerfectStreak = Math.max(this.bestPerfectStreak, this.perfectStreak);
 
     this.score += PERFECT_POINTS * this.combo;
     this.popup(position, 'PERFEKT!', PALETTE.yellow, 1.25);
     this.burst(position, PALETTE.yellow, 18, 210);
     this.flash = 0.6;
     sfx.perfect(this.combo);
+    this.buzz(12);
 
     if (this.combo < MAX_COMBO) this.combo += 1;
+    this.bestCombo = Math.max(this.bestCombo, this.combo);
 
     if (this.perfectStreak > 0 && this.perfectStreak % HOT_STREAK_STEP === 0) {
       this.score += HOT_STREAK_BONUS;
@@ -339,24 +370,24 @@ export default class LocoFryer {
     }
   }
 
-  scoreGood(slotIndex, position) {
+  scoreGood(slotIndex, position, missedBy) {
     this.slots[slotIndex] = null;
     this.served += 1;
     // Brauchbar, aber kein Ausbau der Combo – nur Perfekt treibt die Runde.
     this.score += GOOD_POINTS * this.combo;
     this.perfectStreak = 0;
-    this.popup(position, 'gut', PALETTE.paper, 0.9);
+    this.popup(position, this.formatMiss(missedBy), PALETTE.paper, 0.8);
     this.burst(position, PALETTE.golden, 8, 140);
     sfx.good();
   }
 
-  scoreRaw(slotIndex, position) {
+  scoreRaw(slotIndex, position, missedBy) {
     this.slots[slotIndex] = null;
     this.served += 1;
     // Zu früh gezogen: Das Teil ist hin, die Combo fällt zurück.
     this.combo = 1;
     this.perfectStreak = 0;
-    this.popup(position, 'zu früh!', PALETTE.paper, 0.95);
+    this.popup(position, this.formatMiss(missedBy), PALETTE.raw, 0.85);
     this.burst(position, PALETTE.raw, 8, 130);
     sfx.raw();
   }
@@ -366,12 +397,14 @@ export default class LocoFryer {
     this.slots[slotIndex] = null;
     this.served += 1;
     this.strikes += 1;
+    this.burns += 1;
     this.combo = 1;
     this.perfectStreak = 0;
     this.shake = 1;
     this.popup(position, 'VERBRANNT', PALETTE.red, 1.1);
     this.smoke(position);
     sfx.burnt();
+    this.buzz([50, 40, 50]);
 
     if (this.strikes >= START_STRIKES) this.endGame();
   }
@@ -383,7 +416,12 @@ export default class LocoFryer {
     this.handlers.onGameOver?.({
       score: Math.floor(this.score),
       perfects: this.perfects,
+      perfectsByType: { ...this.perfectsByType },
+      bestCombo: this.bestCombo,
+      bestPerfectStreak: this.bestPerfectStreak,
+      burns: this.burns,
       served: this.served,
+      closestMiss: this.closestMiss,
     });
   }
 

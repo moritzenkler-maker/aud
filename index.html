@@ -67,26 +67,37 @@
             <span class="stat__label">Rekord</span>
           </div>
           <div class="stat">
-            <span class="stat__value" id="home-games">0</span>
-            <span class="stat__label">Runden</span>
+            <span class="stat__value" id="home-streak">0</span>
+            <span class="stat__label">Tage Serie</span>
           </div>
           <div class="stat">
-            <span class="stat__value" id="home-coupons">0</span>
-            <span class="stat__label">Gutscheine</span>
+            <span class="stat__value stat__value--small" id="home-rank">–</span>
+            <span class="stat__label">Rang</span>
           </div>
         </div>
+
+        <p class="streak-note" id="streak-note" hidden></p>
+
+        <section class="panel">
+          <h2 class="panel__title">Missionen heute</h2>
+          <div class="missions" id="mission-list"></div>
+          <p class="missions__note" id="mission-note"></p>
+        </section>
 
         <section class="panel">
           <h2 class="panel__title">So geht's</h2>
           <ul class="rules">
-            <li><span class="rules__dot rules__dot--gold"></span>
-              <strong>Perfekt:</strong> Ring leuchtet golden – volle Punkte, Combo steigt.
+            <li>
+              <span class="rules__dot rules__dot--gold"></span>
+              <span><strong>Perfekt:</strong> Ring leuchtet golden – volle Punkte, Combo steigt.</span>
             </li>
-            <li><span class="rules__dot rules__dot--pale"></span>
-              <strong>Zu früh:</strong> wenige Punkte, die Combo fällt auf x1 zurück.
+            <li>
+              <span class="rules__dot rules__dot--pale"></span>
+              <span><strong>Zu früh:</strong> wenige Punkte, die Combo fällt auf x1 zurück.</span>
             </li>
-            <li><span class="rules__dot rules__dot--burnt"></span>
-              <strong>Verbrannt:</strong> Ring läuft voll – dreimal und die Schicht ist vorbei.
+            <li>
+              <span class="rules__dot rules__dot--burnt"></span>
+              <span><strong>Verbrannt:</strong> Ring läuft voll – dreimal und die Schicht ist vorbei.</span>
             </li>
           </ul>
         </section>
@@ -147,6 +158,9 @@
               <span>Perfekt gezogen</span><strong id="result-perfects">0</strong>
             </div>
             <div class="result__row">
+              <span>Knappster Fehlversuch</span><strong id="result-miss">–</strong>
+            </div>
+            <div class="result__row">
               <span>Verdiente Coins</span><strong id="result-coins">+0</strong>
             </div>
             <div class="result__row">
@@ -155,8 +169,13 @@
             <p class="result__note" id="result-note" hidden></p>
           </div>
 
+          <div class="result__missions" id="result-missions" hidden></div>
+
           <button class="button button--primary button--big" id="again-button" type="button">
-            Nochmal spielen
+            Sofort nochmal
+          </button>
+          <button class="button button--share" id="share-button" type="button">
+            Ergebnis teilen
           </button>
           <button class="button button--ghost" id="to-rewards-button" type="button">
             Belohnungen ansehen
@@ -203,6 +222,18 @@
         <span aria-hidden="true">🎟️</span><span>Belohnungen</span>
       </button>
     </nav>
+
+    <div class="sheet" id="share-sheet" hidden>
+      <div class="sheet__box">
+        <h2 class="sheet__title">Ergebnis teilen</h2>
+        <img class="sheet__image" id="share-image" alt="Ergebniskarte zum Teilen" />
+        <button class="button button--primary" id="share-send" type="button">Teilen</button>
+        <button class="button button--ghost" id="share-close" type="button">Schließen</button>
+        <p class="sheet__hint">
+          Tipp: Bild lange gedrückt halten, um es zu speichern – passt genau in Story und Reel.
+        </p>
+      </div>
+    </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 

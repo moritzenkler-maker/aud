@@ -3,6 +3,8 @@
 import LocoFryer from './game.js';
 import { loadProfile, saveProfile, resetProfile } from './storage.js';
 import { isMuted, toggleMute, sfx } from './audio.js';
+import { applyMissionProgress, missionState } from './missions.js';
+import { renderShareCard, shareCard } from './sharecard.js';
 import {
   REWARDS,
   DAILY_BONUS_COINS,
@@ -14,8 +16,10 @@ import {
   claimDailyBonus,
   isCouponExpired,
   markCouponUsed,
+  rankFor,
   redeemReward,
   remainingDailyCoins,
+  streakAtRisk,
 } from './economy.js';
 
 const $ = (selector) => document.querySelector(selector);
@@ -35,6 +39,11 @@ let game = null;
 let toastTimer = null;
 let resetTimer = null;
 let overlayMode = 'pause';
+let lastRun = null;
+let shareCanvas = null;
+// Die Erklärung vor der Runde kommt nur einmal je Sitzung – danach soll der
+// nächste Versuch ohne Zwischenschritt starten.
+let briefingSeen = false;
 
 /* ------------------------------------------------------------ Hilfsmittel */
 
@@ -87,8 +96,18 @@ function showScreen(name) {
 function renderHome() {
   $('#home-coins').textContent = profile.coins.toLocaleString('de-DE');
   $('#home-highscore').textContent = profile.highScore.toLocaleString('de-DE');
-  $('#home-games').textContent = profile.gamesPlayed;
-  $('#home-coupons').textContent = profile.coupons.filter((coupon) => !coupon.redeemed).length;
+  $('#home-streak').textContent = profile.streak ?? 0;
+  $('#home-rank').textContent = rankFor(profile.highScore).current.title;
+
+  const note = $('#streak-note');
+  if (streakAtRisk(profile)) {
+    note.textContent = `🔥 Deine Serie steht bei ${profile.streak} Tagen – heute noch nicht gespielt.`;
+    note.hidden = false;
+  } else {
+    note.hidden = true;
+  }
+
+  renderMissions();
 
   const remaining = remainingDailyCoins(profile);
   $('#wallet-daily').textContent =
@@ -117,6 +136,35 @@ function renderHome() {
     )} Punkte</span><span class="coupon__meta">${formatDate(entry.date)}</span>`;
     list.appendChild(item);
   });
+}
+
+function renderMissions() {
+  const container = $('#mission-list');
+  const missions = missionState(profile);
+  container.innerHTML = '';
+
+  for (const mission of missions) {
+    const percent = Math.round((mission.progress / mission.target) * 100);
+    const card = document.createElement('div');
+    card.className = `mission${mission.done ? ' mission--done' : ''}`;
+    card.innerHTML = `
+      <div class="mission__head">
+        <span class="mission__title">${mission.title}</span>
+        <span class="mission__reward">${mission.done ? '✓' : `+${mission.reward}`}</span>
+      </div>
+      <div class="mission__bar"><span style="width:${Math.min(100, percent)}%"></span></div>
+      <span class="mission__progress">${Math.min(mission.progress, mission.target).toLocaleString(
+        'de-DE',
+      )} / ${mission.target.toLocaleString('de-DE')}</span>
+    `;
+    container.appendChild(card);
+  }
+
+  const open = missions.filter((mission) => !mission.done).length;
+  $('#mission-note').textContent =
+    open === 0
+      ? 'Alle Missionen erledigt – morgen gibt es drei neue.'
+      : 'Missionscoins zählen gegen dasselbe Tageslimit wie erspielte Coins.';
 }
 
 function renderRewards() {
@@ -224,8 +272,12 @@ function startGame() {
   // Layout steht erst nach dem Screen-Wechsel fest.
   requestAnimationFrame(() => instance.onResize());
 
-  // Erst orientieren, dann losfrittieren – der Timing-Druck beginnt bewusst
-  // nicht in dem Moment, in dem der Bildschirm wechselt.
+  if (briefingSeen) {
+    beginRound();
+    return;
+  }
+
+  // Beim ersten Mal kurz erklären, danach geht es direkt los.
   showOverlay('start', {
     title: 'Bereit?',
     text: 'Tippe ein Teil genau dann, wenn sein Ring golden leuchtet. Dreimal verbrannt und die Schicht ist vorbei.',
@@ -234,27 +286,51 @@ function startGame() {
 }
 
 function beginRound() {
+  briefingSeen = true;
   $('#game-overlay').hidden = true;
   ensureGame().start();
 }
 
-function handleGameOver({ score, perfects }) {
-  const result = applyGameResult(profile, score, new Date());
+function handleGameOver(run) {
+  const { score, perfects, closestMiss } = run;
+  const now = new Date();
+
+  const result = applyGameResult(profile, score, now);
   profile = result.profile;
+
+  const missions = applyMissionProgress(profile, run, now);
+  profile = missions.profile;
   persist();
+
+  lastRun = { ...run, isRecord: result.isNewRecord, streak: result.streak };
 
   $('#result-score').textContent = score.toLocaleString('de-DE');
   $('#result-perfects').textContent = perfects;
+  $('#result-miss').textContent =
+    closestMiss === null ? '–' : `${closestMiss.toFixed(2).replace('.', ',')} s`;
+
+  const missionBox = $('#result-missions');
+  if (missions.completed.length > 0) {
+    missionBox.innerHTML = missions.completed
+      .map((mission) => `<p class="result__mission">✓ ${mission.title}</p>`)
+      .join('');
+    missionBox.hidden = false;
+  } else {
+    missionBox.hidden = true;
+  }
   $('#result-coins').innerHTML = `+${result.earned}${COIN_ICON}`;
   $('#result-balance').innerHTML = `${profile.coins.toLocaleString('de-DE')}${COIN_ICON}`;
   $('#result-badge').hidden = !result.isNewRecord;
+
+  if (result.rankUp) toast(`Neuer Rang: ${result.rankUp.title}!`);
+  else if (missions.completed.length > 0) toast(`Mission geschafft: +${missions.coins} Coins`);
 
   // Erklären, warum es weniger Coins gab als die Punkte hergeben würden.
   const note = $('#result-note');
   if (result.cappedAway > 0) {
     note.textContent = `Tageslimit erreicht: ${result.cappedAway} Coins konnten heute nicht mehr gutgeschrieben werden.`;
     note.hidden = false;
-  } else if (result.earned === 0) {
+  } else if (result.earned === 0 && missions.coins === 0) {
     const missing = POINTS_PER_COIN - (score % POINTS_PER_COIN);
     note.textContent = `Noch ${missing.toLocaleString('de-DE')} Punkte bis zum nächsten Coin.`;
     note.hidden = false;
@@ -365,6 +441,32 @@ function disarmReset() {
   button.textContent = 'Fortschritt zurücksetzen';
 }
 
+async function openShare() {
+  if (!lastRun) return;
+  shareCanvas = renderShareCard({
+    score: lastRun.score,
+    perfects: lastRun.perfects,
+    bestCombo: lastRun.bestCombo,
+    rank: rankFor(profile.highScore).current.title,
+    streak: lastRun.streak ?? profile.streak ?? 0,
+    isRecord: Boolean(lastRun.isRecord),
+  });
+  $('#share-image').src = shareCanvas.toDataURL('image/png');
+  $('#share-sheet').hidden = false;
+}
+
+function closeShare() {
+  $('#share-sheet').hidden = true;
+}
+
+async function sendShare() {
+  if (!shareCanvas) return;
+  const text = `${lastRun.score.toLocaleString('de-DE')} Punkte bei Loco Fryer. Schaffst du mehr?`;
+  const outcome = await shareCard(shareCanvas, text);
+  if (outcome === 'copied') toast('Ergebnis in die Zwischenablage kopiert.');
+  if (outcome === 'manual') toast('Bild lange gedrückt halten, um es zu speichern.');
+}
+
 function updateMuteButton() {
   $('#mute-button').textContent = isMuted() ? '🔇' : '🔊';
 }
@@ -377,6 +479,18 @@ $('#to-home-button').addEventListener('click', () => showScreen('home'));
 $('#to-rewards-button').addEventListener('click', () => showScreen('rewards'));
 $('#bonus-button').addEventListener('click', claimBonus);
 $('#reset-button').addEventListener('click', handleReset);
+$('#share-button').addEventListener('click', openShare);
+$('#share-send').addEventListener('click', sendShare);
+$('#share-close').addEventListener('click', closeShare);
+
+// "Noch eine Runde" soll so wenig Reibung wie möglich haben.
+window.addEventListener('keydown', (event) => {
+  const onResult = SCREENS.over.classList.contains('screen--active');
+  if (onResult && (event.key === 'Enter' || event.key === ' ')) {
+    event.preventDefault();
+    startGame();
+  }
+});
 
 $('#pause-button').addEventListener('click', pauseGame);
 $('#overlay-resume').addEventListener('click', handleOverlayPrimary);

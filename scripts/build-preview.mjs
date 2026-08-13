@@ -22,8 +22,10 @@ const read = (...parts) => readFile(join(ROOT, ...parts), 'utf8');
 /** Reihenfolge entspricht den Abhängigkeiten der Module untereinander. */
 const MODULES = [
   'src/js/economy.js',
+  'src/js/missions.js',
   'src/js/storage.js',
   'src/js/audio.js',
+  'src/js/sharecard.js',
   'src/js/game.js',
   'src/js/app.js',
 ];
