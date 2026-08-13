@@ -21,6 +21,7 @@ const read = (...parts) => readFile(join(ROOT, ...parts), 'utf8');
 
 /** Reihenfolge entspricht den Abhängigkeiten der Module untereinander. */
 const MODULES = [
+  'src/js/brand.js',
   'src/js/economy.js',
   'src/js/missions.js',
   'src/js/modes.js',
@@ -50,12 +51,16 @@ const ASSETS = [
   'assets/rewards/tenders.svg',
   'assets/rewards/burger.svg',
   'assets/rewards/bucket.svg',
+  'assets/rewards/shaker.svg',
+  'assets/rewards/whey.svg',
 ];
 
 /** Entfernt die Modul-Syntax, damit alle Dateien in einem Script laufen. */
 function inlineModule(source) {
   return source
     .replace(/^import\s+[^;]*?;\s*$/gms, '')
+    // Re-Exporte (`export { a } from './x.js'`) haben im Bündel keinen Sinn.
+    .replace(/^export\s*\{[^}]*\}\s*(?:from\s*'[^']*')?;\s*$/gm, '')
     .replace(/^export\s+default\s+class/gm, 'class')
     .replace(/^export\s+(const|function|class|let)\b/gm, '$1')
     // Der Service Worker ist Teil der ausgelieferten App, nicht der Vorschau.

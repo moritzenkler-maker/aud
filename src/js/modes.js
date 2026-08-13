@@ -19,10 +19,10 @@ export const MODES = [
   {
     id: 'fritteuse',
     title: 'Fritteuse',
-    subtitle: 'Zieh im goldenen Moment, kurz bevor es verbrennt',
+    subtitle: 'Wings und Filets im goldenen Moment aus dem Korb ziehen',
     skill: 'Timing',
     engine: 'fryer',
-    icon: 'nugget',
+    icon: 'filet',
     config: {
       columns: 2,
       rows: 3,
@@ -38,16 +38,16 @@ export const MODES = [
   {
     id: 'bestellung',
     title: 'Bestellung',
-    subtitle: 'Merk dir die Reihenfolge und tippe sie nach',
+    subtitle: 'Merk dir die Bestellung und stell sie zusammen',
     skill: 'Gedächtnis',
     engine: 'order',
-    icon: 'wing',
+    icon: 'wings',
     config: { perfectPoints: 40 },
   },
   {
     id: 'sortieren',
     title: 'Sortieren',
-    subtitle: 'Chicken nach links, Beilagen nach rechts',
+    subtitle: 'Chicken nach links, Sides nach rechts',
     skill: 'Tempo',
     engine: 'sorting',
     icon: 'fries',
@@ -65,7 +65,7 @@ export const MODES = [
   {
     id: 'stapel',
     title: 'Burger-Stapel',
-    subtitle: 'Setz jede Schicht sauber auf den Turm',
+    subtitle: 'Bau den Chili Cheese Burger Schicht für Schicht',
     skill: 'Präzision',
     engine: 'stack',
     icon: 'burger',
@@ -74,7 +74,7 @@ export const MODES = [
   {
     id: 'dip',
     title: 'Dip-Meter',
-    subtitle: 'Stopp den Zeiger in der schrumpfenden Zone',
+    subtitle: 'Füll den Dip-Becher – stopp den Zeiger in der Zone',
     skill: 'Nerven',
     engine: 'dipmeter',
     icon: 'dip',
@@ -86,7 +86,7 @@ export const MODES = [
     subtitle: 'Gib das richtige Wechselgeld heraus',
     skill: 'Kopfrechnen',
     engine: 'register',
-    icon: 'drink',
+    icon: 'waffle',
     config: { perfectPoints: 85 },
   },
   {
@@ -95,7 +95,7 @@ export const MODES = [
     subtitle: 'Greif jedes Teil genau an der Marke ab',
     skill: 'Rhythmus',
     engine: 'belt',
-    icon: 'tender',
+    icon: 'pops',
     config: { perfectPoints: 75, goodPoints: 15, rampItems: 40 },
   },
 ];

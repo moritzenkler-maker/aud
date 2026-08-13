@@ -7,11 +7,12 @@
  */
 
 import GameBase, { PALETTE, lerp } from './base.js';
-import { FOOD, FOOD_IDS, drawFood } from './icons.js';
+import { PRODUCTS, PRODUCT_IDS, randomProduct } from '../brand.js';
+import { drawFood } from './icons.js';
 
 const BINS = {
   chicken: { label: 'CHICKEN', color: PALETTE.deep },
-  beilage: { label: 'BEILAGE', color: PALETTE.yellow },
+  side: { label: 'SIDES', color: PALETTE.yellow },
 };
 
 export default class SortingGame extends GameBase {
@@ -53,13 +54,13 @@ export default class SortingGame extends GameBase {
   }
 
   spawn() {
-    const id = FOOD_IDS[Math.floor(Math.random() * FOOD_IDS.length)];
-    this.item = { id, group: FOOD[id].group, x: this.vw / 2, y: 126, spin: 0 };
+    const id = randomProduct();
+    this.item = { id, group: PRODUCTS[id].group, x: this.vw / 2, y: 126, spin: 0 };
   }
 
   onPointer(x) {
     if (!this.item) return;
-    this.sort(x < this.vw / 2 ? 'chicken' : 'beilage');
+    this.sort(x < this.vw / 2 ? 'chicken' : 'side');
   }
 
   onKey(key) {
@@ -68,7 +69,7 @@ export default class SortingGame extends GameBase {
       return true;
     }
     if (key === 'ArrowRight' || key === 'd') {
-      this.sort('beilage');
+      this.sort('side');
       return true;
     }
     return false;
@@ -103,7 +104,7 @@ export default class SortingGame extends GameBase {
   render(ctx) {
     this.drawKitchen(ctx, 96);
 
-    this.label(ctx, 'WOHIN DAMIT?', this.vw / 2, 88, { size: 28, fill: PALETTE.ink });
+    this.label(ctx, 'WOHIN DAMIT?', this.vw / 2, 88, { size: 28, fill: PALETTE.cream });
 
     // Trennlinie der beiden Hälften
     ctx.strokeStyle = 'rgba(18,16,14,0.18)';
@@ -116,13 +117,13 @@ export default class SortingGame extends GameBase {
     ctx.setLineDash([]);
 
     this.drawBin(ctx, 'chicken', 0);
-    this.drawBin(ctx, 'beilage', this.vw / 2);
+    this.drawBin(ctx, 'side', this.vw / 2);
 
     if (this.item) {
       drawFood(ctx, this.item.id, this.item.x, this.item.y, 62);
-      this.label(ctx, FOOD[this.item.id].label.toUpperCase(), this.item.x, this.item.y + 58, {
+      this.label(ctx, PRODUCTS[this.item.id].name.toUpperCase(), this.item.x, this.item.y + 58, {
         size: 15,
-        fill: PALETTE.ink,
+        fill: PALETTE.cream,
       });
     }
   }

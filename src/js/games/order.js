@@ -11,7 +11,8 @@
 import GameBase, { PALETTE, lerp } from './base.js';
 import { drawFood } from './icons.js';
 
-const TILES = ['nugget', 'wing', 'fries', 'burger', 'dip', 'drink'];
+// Der Shaker ist Teil bestimmter Menüs – deshalb steht er mit im Regal.
+const TILES = ['wings', 'filet', 'fries', 'pops', 'dip', 'shaker'];
 const TILE_COLUMNS = 3;
 
 export default class OrderGame extends GameBase {
@@ -136,7 +137,8 @@ export default class OrderGame extends GameBase {
     const showing = this.phase === 'show';
     this.label(ctx, showing ? 'MERKEN' : 'NACHTIPPEN', this.vw / 2, 88, {
       size: 30,
-      fill: showing ? PALETTE.red : PALETTE.ink,
+      fill: showing ? PALETTE.yellow : PALETTE.cream,
+      glow: showing ? 'rgba(255,221,0,0.45)' : null,
     });
 
     // Bestellzettel mit der Länge der Bestellung

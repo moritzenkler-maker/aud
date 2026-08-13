@@ -119,7 +119,7 @@ export default class RegisterGame extends GameBase {
 
   render(ctx) {
     this.drawKitchen(ctx, 96);
-    this.label(ctx, 'WECHSELGELD', this.vw / 2, 88, { size: 28, fill: PALETTE.ink });
+    this.label(ctx, 'WECHSELGELD', this.vw / 2, 88, { size: 28, fill: PALETTE.cream });
 
     const question = this.question;
     if (!question) return;
@@ -153,7 +153,7 @@ export default class RegisterGame extends GameBase {
     this.roundedRect(ctx, bonX + 16, bonY + bonHeight - 26, (bonWidth - 32) * remaining, 12, 6);
     ctx.fill();
 
-    this.label(ctx, 'Wie viel zurück?', this.vw / 2, this.vh * 0.48, { size: 18, fill: PALETTE.ink });
+    this.label(ctx, 'Wie viel zurück?', this.vw / 2, this.vh * 0.48, { size: 18, fill: PALETTE.cream });
 
     for (const [index, option] of this.options.entries()) {
       const active = this.pressed === index && this.pressedTimer > 0;

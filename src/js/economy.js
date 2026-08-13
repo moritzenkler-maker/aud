@@ -5,6 +5,8 @@
  * sowohl im Browser als auch unter Node (Tests) laufen kann.
  */
 
+import { PROTEIN } from './brand.js';
+
 /*
  * Wirtschaftliche Auslegung
  * -------------------------
@@ -61,44 +63,66 @@ export function rankFor(highScore) {
   return { current: RANKS[index], next: RANKS[index + 1] ?? null };
 }
 
-/** Belohnungskatalog. `id` wird persistiert und darf sich nicht ändern. */
+/**
+ * Belohnungskatalog – ausschließlich Produkte, die es wirklich gibt.
+ * Namen und Angaben stammen aus brand.js. `id` wird in ausgestellten
+ * Gutscheinen gespeichert und darf sich nicht mehr ändern.
+ */
 export const REWARDS = [
   {
     id: 'dip',
     title: 'Dip nach Wahl',
-    subtitle: 'Truffle Mayo, Harissa Mayo oder Classic',
+    subtitle: 'White Truffle Mayo, Harissa Mayo oder Rosemary Ketchup',
     cost: 150,
     minOrder: 0,
     icon: './assets/rewards/dip.svg',
   },
   {
     id: 'fries',
-    title: 'Loco Fries',
+    title: 'Crispy Fries',
     subtitle: 'Eine Portion Fries gratis',
     cost: 300,
     minOrder: 10,
     icon: './assets/rewards/fries.svg',
   },
   {
-    id: 'tenders',
-    title: '4 Chicken Tenders',
-    subtitle: 'Vier Tenders gratis zur Bestellung',
+    id: 'filets',
+    title: 'Crunchy Filets',
+    subtitle: 'Halal Filets mit Signature Flavour deiner Wahl',
     cost: 550,
     minOrder: 15,
     icon: './assets/rewards/tenders.svg',
   },
   {
+    id: 'shaker',
+    title: 'Loco × ESN Shaker',
+    subtitle: 'Der Shaker aus der Protein-Kooperation',
+    cost: 700,
+    minOrder: 15,
+    icon: './assets/rewards/shaker.svg',
+    protein: true,
+  },
+  {
     id: 'burger',
-    title: 'Loco Burger für 1 €',
-    subtitle: 'Crispy Chicken, Cheese und Pickles',
+    title: 'Chili Cheese Burger für 1 €',
+    subtitle: 'Crispy Chicken, Cheese, Chili',
     cost: 900,
     minOrder: 15,
     icon: './assets/rewards/burger.svg',
   },
   {
+    id: 'whey',
+    title: 'Designer Whey Chicken Waffle',
+    subtitle: `Portion mit ${PROTEIN.whey.proteinPerServing} g Protein und ${PROTEIN.whey.kcalPerServing} kcal`,
+    cost: 1100,
+    minOrder: 15,
+    icon: './assets/rewards/whey.svg',
+    protein: true,
+  },
+  {
     id: 'bucket',
-    title: '20 % auf den Bucket',
-    subtitle: 'Für den großen Hunger mit der Crew',
+    title: '20 % auf den Shake Bucket',
+    subtitle: 'Wings und Filets, 2 Flavours, Side und Dip',
     cost: 1500,
     minOrder: 25,
     icon: './assets/rewards/bucket.svg',

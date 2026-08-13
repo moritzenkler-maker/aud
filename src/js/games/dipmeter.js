@@ -124,7 +124,7 @@ export default class DipMeterGame extends GameBase {
 
   render(ctx) {
     this.drawKitchen(ctx, 96);
-    this.label(ctx, 'TRIFF DIE ZONE', this.vw / 2, 88, { size: 28, fill: PALETTE.ink });
+    this.label(ctx, 'TRIFF DIE ZONE', this.vw / 2, 88, { size: 28, fill: PALETTE.cream });
 
     // Dip-Becher als Fortschrittsgefäß
     const cupX = this.vw / 2;
@@ -169,7 +169,7 @@ export default class DipMeterGame extends GameBase {
 
     this.label(ctx, `${this.attempts} Versuche`, this.vw / 2, y + height + 58, {
       size: 15,
-      fill: PALETTE.ink,
+      fill: PALETTE.cream,
     });
   }
 }

@@ -6,9 +6,11 @@ Gutscheine ein, die im Restaurant vorgezeigt werden.
 
 Die App ist eine installierbare Web-App (PWA) ohne Build-Schritt und ohne
 Laufzeit-Abhängigkeiten – reines HTML, CSS und modernes JavaScript (ES-Module).
-Gestaltung, Spielgrafik und Icons folgen dem Marken-CI: Gelb und Rot des
-Badge-Logos, kräftige schwarze Comic-Konturen, das rot-weiße Karo der
-Verpackung und der Hahn mit Sonnenbrille als Spielfigur.
+Gestaltet ist die App wie der Laden am Abend: dunkler Tresen, gefliste Wand,
+gebürsteter Stahl, warmes Licht von oben, Leuchtschrift in Gelb und Rot und
+das rot-weiße Karo der Verpackung als wiederkehrendes Detail. Flächen
+arbeiten mit Verläufen, Tiefe und Glanzkanten statt mit Comic-Konturen; die
+Ware im Spiel bekommt Kruste, Krümel und Glanzlicht.
 
 ## Schnellstart
 
@@ -22,6 +24,65 @@ Für Node ab Version 20. Alternativ genügt jeder statische Webserver, der das
 Projektverzeichnis ausliefert (ein Öffnen der `index.html` per `file://`
 funktioniert wegen der ES-Module nicht).
 
+## Markenrecherche
+
+Grundregel im Projekt: **In der App taucht nur auf, was es bei Loco Chicken
+wirklich gibt.** Alle Produktnamen und Angaben liegen in `src/js/brand.js`,
+und `test/brand.test.mjs` bricht den Build ab, wenn Belohnungen oder Spiele
+etwas verwenden, das dort nicht steht.
+
+### Was belegt ist
+
+| Thema | Stand |
+| --- | --- |
+| Marke | Crispy-Fried-Chicken-Konzept von Luciano, betrieben mit Lanch; gestartet als virtuelle Liefermarke in rund 100 Städten |
+| Läden | inzwischen auch feste Standorte, u. a. Berlin Friedrichshain (Frankfurter Allee 60) und Düsseldorf |
+| Positionierung | 100 % halal, extra large Wings und Filets |
+| Signature Flavours | Hot Chilli, Garlic Cheese, White Truffle, Korean, Lemon Pepper – als Spice Rub im Shake Bucket |
+| Bucket | Signature Shake Bucket: Wings und Filets, 2 Flavours, 1 Side, 1 Dip |
+| Sides | Crispy Fries, Potato Pops, Onion Rings, BBQ Waffles |
+| Dips | White Truffle Mayo, Harissa Mayo, Rosemary Ketchup, Loco's Hot Chili Sauce |
+| Burger | Classic Cheese und Chili Cheese |
+| High Protein | Kooperation mit ESN: Designer Whey in der Sorte Chicken Waffle, 23 g Protein und 114 kcal je Portion (30 g auf 200 ml); dazu Vanilla-Sample und Shaker zu bestimmten Menüs |
+| Kreatin-Flavour | Lemon Pepper Flavour mit 3 g Kreatin pro Tütchen – ein Produkt von Loco Chicken, laut Fachpresse **nicht** Teil der ESN-Kooperation |
+
+Quellen: [Über uns – Loco Chicken](https://loco-chicken.com/about-us/),
+[Loco Chicken bei Lieferando](https://www.lieferando.de/lieferdienst/ketten/loco-chicken),
+[Wolt Mannheim](https://wolt.com/en/deu/mannheim/restaurant/loco-chicken-mannheim),
+[Tageskarte zur ersten Filiale](https://www.tageskarte.io/gastronomie/detail/einst-virtuelle-marke-loco-chicken-eroeffnet-filiale-in-duesseldorf.html),
+[Stack3d zur ESN-Kooperation](https://www.stack3d.com/2026/01/loco-chicken-x-esn-creatine-seasoning/),
+[Stack3d zur Einordnung des Kreatin-Flavours](https://www.stack3d.com/2026/01/loco-chicken-makes-lemon-pepper-creatine.html),
+[Stack3d zum Chicken-Waffle-Whey](https://www.stack3d.com/2026/04/esn-loco-fried-chicken-waffles-designer-whey-protein.html).
+
+### Was weiterhin Platzhalter ist
+
+- `assets/icon.svg` und `assets/logo.svg` sind Nachbauten des Badge-Logos.
+- Die Hausschrift ist eine fette kursive Systemschrift (`--display`).
+- Preise und Mindestbestellwerte der Gutscheine sind Vorschläge, keine
+  abgestimmten Konditionen.
+
+Der Netzwerkzugang dieser Entwicklungsumgebung lässt nur wenige Domains zu;
+die Recherche stützt sich deshalb auf Suchergebnisse, nicht auf vollständig
+abgerufene Seiten. Vor dem Launch sollten Sortiment, Nährwerte und
+Gutscheinbedingungen einmal gegen die offizielle Karte geprüft werden.
+
+## High Protein in der App
+
+Die Protein-Schiene taucht an drei Stellen auf, jeweils mit den echten Zahlen:
+
+1. **Karte auf der Startseite** mit dem Designer Whey Chicken Waffle
+   (23 g Protein, 114 kcal je Portion) und dem Hinweis auf das Lemon Pepper
+   Flavour mit 3 g Kreatin.
+2. **Zwei Belohnungen** – der Loco × ESN Shaker (700 Coins) und eine Portion
+   Designer Whey Chicken Waffle (1.100 Coins), beide mit „High Protein"
+   gekennzeichnet.
+3. **Im Spiel "Bestellung"** steht der Shaker mit im Regal, weil er zu
+   bestimmten Menüs dazugehört.
+
+Bewusst getrennt formuliert: Der Whey ist die ESN-Kooperation, das
+Kreatin-Flavour ist ein eigenes Produkt. Ein Test hält diese Unterscheidung
+fest, damit sie beim Umformulieren nicht verloren geht.
+
 ## Die acht Spiele
 
 Jedes Spiel hat eine eigene Mechanik – wem eines zu langweilig wird, wechselt.
@@ -29,11 +90,11 @@ Gemeinsam sind ihnen nur der Rahmen und die Wertung.
 
 | Spiel | Können | Worum es geht |
 | --- | --- | --- |
-| **Fritteuse** | Timing | Teile im goldenen Moment ziehen, kurz vor dem Verbrennen |
+| **Fritteuse** | Timing | Wings, Filets und Onion Rings im goldenen Moment ziehen |
 | **Bestellung** | Gedächtnis | Reihenfolge merken und nachtippen, sie wird länger und kürzer gezeigt |
-| **Sortieren** | Tempo | Chicken nach links, Beilagen nach rechts – im freien Fall |
+| **Sortieren** | Tempo | Chicken nach links, Sides nach rechts – im freien Fall |
 | **Chili-Alarm** | Reaktion | Chicken aus neun Luken greifen, Chilis liegen lassen |
-| **Burger-Stapel** | Präzision | Schwingende Schichten sauber setzen, Überstand geht verloren |
+| **Burger-Stapel** | Präzision | Den Chili Cheese Burger Schicht für Schicht bauen |
 | **Dip-Meter** | Nerven | Den Zeiger in der schrumpfenden Zone stoppen |
 | **Kasse** | Kopfrechnen | Das richtige Wechselgeld unter Zeitdruck wählen |
 | **Fließband** | Rhythmus | Jedes Teil genau an der Marke abgreifen |
@@ -65,7 +126,7 @@ meldet Ergebnisse über `hit()` und `fail()`. Ein neues Spiel ist dadurch eine
 Datei plus ein Eintrag in `src/js/modes.js`.
 
 Alle Grafiken werden prozedural auf ein Canvas gezeichnet; die Speisen-Icons
-liegen gemeinsam in `src/js/games/icons.js`, damit ein Nugget überall gleich
+liegen gemeinsam in `src/js/games/icons.js`, damit ein Filet überall gleich
 aussieht.
 
 ## Engagement-Mechaniken
@@ -125,10 +186,12 @@ Wiederkommen sein, kein Automatismus.
 | Belohnung | Coins | Bedingung |
 | --- | --- | --- |
 | Dip nach Wahl | 150 | zu jeder Bestellung |
-| Loco Fries | 300 | ab 10 € Bestellwert |
-| 4 Chicken Tenders | 550 | ab 15 € Bestellwert |
-| Loco Burger für 1 € | 900 | ab 15 € Bestellwert |
-| 20 % auf den Bucket | 1.500 | ab 25 € Bestellwert |
+| Crispy Fries | 300 | ab 10 € Bestellwert |
+| Crunchy Filets | 550 | ab 15 € Bestellwert |
+| Loco × ESN Shaker | 700 | ab 15 € Bestellwert |
+| Chili Cheese Burger für 1 € | 900 | ab 15 € Bestellwert |
+| Designer Whey Chicken Waffle | 1.100 | ab 15 € Bestellwert |
+| 20 % auf den Shake Bucket | 1.500 | ab 25 € Bestellwert |
 
 ### Warum der Laden dabei nicht draufzahlt
 
@@ -176,6 +239,7 @@ src/js/modes.js         Katalog der acht Spiele (nur Daten, testbar)
 src/js/games/base.js    gemeinsame Basis aller Spiele
 src/js/games/icons.js   Speisen-Icons für alle Spiele
 src/js/games/*.js       die acht Spielmechaniken
+src/js/brand.js         Markenfakten: Produkte, Flavours, Dips, Protein
 src/js/economy.js       Coins, Belohnungen, Gutscheine, Serie, Ränge
 src/js/missions.js      Tagesmissionen (frei von Browser-APIs, testbar)
 src/js/sharecard.js     Ergebniskarte 9:16 zum Teilen
@@ -186,6 +250,7 @@ scripts/build-preview.mjs  baut die Vorschau als Einzeldatei
 test/economy.test.mjs   Unit-Tests der Spiel-Ökonomie
 test/missions.test.mjs  Unit-Tests für Missionen, Serie, Ränge, Tageslimit
 test/modes.test.mjs     prüft Vollständigkeit und Eigenständigkeit der Spiele
+test/brand.test.mjs     stellt sicher, dass nur echte Produkte vorkommen
 ```
 
 `economy.js` enthält die gesamte Wirtschaftslogik als reine Funktionen ohne

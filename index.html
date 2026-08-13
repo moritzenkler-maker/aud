@@ -26,7 +26,7 @@
             <img class="brand__logo" src="./assets/icon.svg" alt="" width="40" height="40" />
             <div>
               <p class="brand__name">Loco Chicken</p>
-              <p class="brand__claim">Deutschland</p>
+              <p class="brand__claim" id="brand-claim">Deutschland</p>
             </div>
           </div>
           <button class="icon-button" id="mute-button" type="button" aria-label="Ton an/aus">
@@ -53,8 +53,8 @@
           <img class="hero__logo" src="./assets/logo.svg" alt="Loco Chicken" width="108" height="108" />
           <h1 class="hero__title">Loco&nbsp;Games</h1>
           <p class="hero__text">
-            Acht Spiele in der Küche – Timing, Gedächtnis, Reaktion, Kopfrechnen. Punkte gibt es
-            nur für saubere Züge, und aus Punkten werden Loco Coins.
+            Acht Spiele hinter dem Tresen – Timing, Gedächtnis, Reaktion, Kopfrechnen. Punkte gibt
+            es nur für saubere Züge, und aus Punkten werden Loco Coins.
           </p>
           <button class="button button--primary button--big" id="play-button" type="button">
             <span id="play-label">Jetzt spielen</span>
@@ -80,6 +80,15 @@
         </div>
 
         <p class="streak-note" id="streak-note" hidden></p>
+
+        <section class="protein-card">
+          <img class="protein-card__icon" src="./assets/rewards/whey.svg" alt="" width="52" height="52" />
+          <div class="protein-card__body">
+            <span class="protein-card__kicker" id="protein-kicker">High Protein</span>
+            <p class="protein-card__title" id="protein-title"></p>
+            <p class="protein-card__text" id="protein-text"></p>
+          </div>
+        </section>
 
         <section class="panel">
           <h2 class="panel__title">Missionen heute</h2>

@@ -11,7 +11,7 @@ import { drawFood } from './icons.js';
 
 const HOLE_COLUMNS = 3;
 const HOLE_ROWS = 3;
-const CHICKEN = ['nugget', 'wing', 'tender'];
+const CHICKEN = ['wings', 'filet', 'pops'];
 
 export default class ChiliGame extends GameBase {
   setup() {
@@ -104,7 +104,7 @@ export default class ChiliGame extends GameBase {
 
     this.label(ctx, 'CHICKEN GREIFEN – CHILI LIEGEN LASSEN', this.vw / 2, this.board.y - 46, {
       size: 13,
-      fill: PALETTE.ink,
+      fill: PALETTE.cream,
     });
 
     ctx.fillStyle = PALETTE.steelDark;

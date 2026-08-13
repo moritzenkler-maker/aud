@@ -7,7 +7,8 @@
  */
 
 import GameBase, { PALETTE, lerp } from './base.js';
-import { FOOD_IDS, drawFood } from './icons.js';
+import { PRODUCT_IDS } from '../brand.js';
+import { drawFood } from './icons.js';
 
 export default class BeltGame extends GameBase {
   setup() {
@@ -36,7 +37,7 @@ export default class BeltGame extends GameBase {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
       this.items.push({
-        id: FOOD_IDS[Math.floor(Math.random() * FOOD_IDS.length)],
+        id: PRODUCT_IDS[Math.floor(Math.random() * PRODUCT_IDS.length)],
         x: this.vw + 40,
       });
       this.spawnTimer = this.spacing;
@@ -104,7 +105,7 @@ export default class BeltGame extends GameBase {
 
   render(ctx) {
     this.drawKitchen(ctx, 96);
-    this.label(ctx, 'AN DER MARKE ABGREIFEN', this.vw / 2, 88, { size: 20, fill: PALETTE.ink });
+    this.label(ctx, 'AN DER MARKE ABGREIFEN', this.vw / 2, 88, { size: 20, fill: PALETTE.cream });
 
     const top = this.beltY - this.beltHeight / 2;
 
@@ -140,6 +141,6 @@ export default class BeltGame extends GameBase {
       drawFood(ctx, item.id, item.x, this.beltY, 56);
     }
 
-    this.label(ctx, 'TIPPEN', this.markerX, top + this.beltHeight + 42, { size: 16, fill: PALETTE.ink });
+    this.label(ctx, 'TIPPEN', this.markerX, top + this.beltHeight + 42, { size: 16, fill: PALETTE.yellow, glow: 'rgba(255,221,0,0.5)' });
   }
 }

@@ -12,10 +12,11 @@
 import GameBase, { PALETTE, lerp, mixColor } from './base.js';
 import { drawFood } from './icons.js';
 
+/** Was wirklich in den Korb kommt – mit unterschiedlicher Garzeit. */
 const PIECE_TYPES = [
-  { id: 'nugget', cookFactor: 0.85 },
-  { id: 'wing', cookFactor: 1 },
-  { id: 'tender', cookFactor: 1.18 },
+  { id: 'wings', cookFactor: 0.9 },
+  { id: 'filet', cookFactor: 1.15 },
+  { id: 'onion', cookFactor: 0.8 },
 ];
 
 export default class FryerGame extends GameBase {
@@ -178,15 +179,47 @@ export default class FryerGame extends GameBase {
   drawBasin(ctx) {
     const { x, y, width, height } = this.basin;
 
-    ctx.fillStyle = PALETTE.steelDark;
+    // Stahlwanne
+    const frame = ctx.createLinearGradient(0, y - 10, 0, y + height + 10);
+    frame.addColorStop(0, PALETTE.steel);
+    frame.addColorStop(0.12, PALETTE.steelMid);
+    frame.addColorStop(1, PALETTE.steelDark);
+    ctx.fillStyle = frame;
     this.roundedRect(ctx, x - 10, y - 10, width + 20, height + 20, 20);
     ctx.fill();
-    this.outline(ctx, 4);
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
 
-    ctx.fillStyle = PALETTE.oil;
+    // Heißes Öl: außen dunkel, in der Mitte durchleuchtet
+    const oil = ctx.createRadialGradient(
+      x + width / 2,
+      y + height * 0.35,
+      width * 0.1,
+      x + width / 2,
+      y + height * 0.5,
+      Math.max(width, height) * 0.8,
+    );
+    oil.addColorStop(0, '#7a5320');
+    oil.addColorStop(0.5, PALETTE.oil);
+    oil.addColorStop(1, PALETTE.oilDark);
+    ctx.fillStyle = oil;
     this.roundedRect(ctx, x, y, width, height, 14);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // Schimmer auf der Öloberfläche
+    ctx.save();
+    this.roundedRect(ctx, x, y, width, height, 14);
+    ctx.clip();
+    const sheen = ctx.createLinearGradient(x, y, x + width * 0.7, y + height * 0.5);
+    sheen.addColorStop(0, 'rgba(255, 216, 150, 0.16)');
+    sheen.addColorStop(1, 'rgba(255, 216, 150, 0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(x, y, width, height);
+    ctx.restore();
 
     ctx.save();
     this.roundedRect(ctx, x, y, width, height, 14);
@@ -205,12 +238,16 @@ export default class FryerGame extends GameBase {
     const { x, y } = this.slotPositions[index];
     const radius = this.slotRadius;
 
-    ctx.fillStyle = PALETTE.oilDark;
+    // Korbmulde: Vertiefung im Öl
+    const well = ctx.createRadialGradient(x, y - radius * 0.3, radius * 0.2, x, y, radius * 1.2);
+    well.addColorStop(0, 'rgba(0,0,0,0.15)');
+    well.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = well;
     ctx.beginPath();
     ctx.arc(x, y, radius * 1.16, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = PALETTE.steel;
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(180,188,196,0.55)';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
     if (!piece) return;

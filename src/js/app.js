@@ -2,6 +2,7 @@
 
 import { createGame } from './game.js';
 import { MODES, DEFAULT_MODE, resolveMode } from './modes.js';
+import { BRAND, PROTEIN } from './brand.js';
 import { drawFood } from './games/icons.js';
 import { loadProfile, saveProfile, resetProfile } from './storage.js';
 import { isMuted, toggleMute, sfx } from './audio.js';
@@ -234,7 +235,7 @@ function renderRewards() {
         <p class="reward__subtitle">${reward.subtitle}</p>
         <p class="reward__terms">${
           reward.minOrder > 0 ? `ab ${reward.minOrder} € Bestellwert` : 'zu jeder Bestellung'
-        }</p>
+        }</p>${reward.protein ? '<span class="reward__badge">High Protein</span>' : ''}
       </div>
       <button class="reward__action" type="button" data-reward="${reward.id}" ${
         affordable ? '' : 'disabled'
@@ -533,6 +534,22 @@ async function sendShare() {
   if (outcome === 'manual') toast('Bild lange gedrückt halten, um es zu speichern.');
 }
 
+/**
+ * High-Protein-Schiene mit den tatsächlichen Angaben aus brand.js.
+ * Bewusst getrennt formuliert: Der Designer Whey ist die Kooperation mit ESN,
+ * das Kreatin-Flavour ist ein eigenes Produkt von Loco Chicken.
+ */
+function renderProteinCard() {
+  $('#brand-claim').textContent = BRAND.claim;
+  $('#protein-kicker').textContent = `High Protein × ${PROTEIN.partner}`;
+  $('#protein-title').textContent = PROTEIN.whey.name;
+  $('#protein-text').innerHTML =
+    `<span class="protein-card__value">${PROTEIN.whey.proteinPerServing} g Protein</span> und ` +
+    `${PROTEIN.whey.kcalPerServing} kcal je Portion (${PROTEIN.whey.serving}). ` +
+    `Dazu gibt es das ${PROTEIN.creatineSeasoning.name} mit ` +
+    `${PROTEIN.creatineSeasoning.creatinePerPacket} g pro Tütchen.`;
+}
+
 function updateMuteButton() {
   $('#mute-button').textContent = isMuted() ? '🔇' : '🔊';
 }
@@ -603,6 +620,7 @@ document.addEventListener('visibilitychange', () => {
 /* --------------------------------------------------------------------- Start */
 
 updateMuteButton();
+renderProteinCard();
 renderHome();
 
 if ('serviceWorker' in navigator) {

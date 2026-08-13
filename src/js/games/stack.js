@@ -140,8 +140,8 @@ export default class StackGame extends GameBase {
 
   render(ctx) {
     this.drawKitchen(ctx, 96);
-    this.label(ctx, 'STAPELN', this.vw / 2, 88, { size: 30, fill: PALETTE.ink });
-    this.label(ctx, `${this.layers.length - 1} Schichten`, this.vw / 2, 138, { size: 14, fill: PALETTE.ink });
+    this.label(ctx, 'STAPELN', this.vw / 2, 88, { size: 30, fill: PALETTE.cream });
+    this.label(ctx, `${this.layers.length - 1} Schichten`, this.vw / 2, 138, { size: 14, fill: PALETTE.cream });
 
     // Restzeit für die schwebende Schicht
     if (this.moving) {

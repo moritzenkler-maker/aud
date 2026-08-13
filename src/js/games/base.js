@@ -21,21 +21,36 @@ import { sfx } from '../audio.js';
 
 export const VIRTUAL_WIDTH = 360;
 
-/** Markenfarben – Gegenstück zu den CSS-Variablen in styles.css. */
+/**
+ * Farben der Spielfläche – Gegenstück zu den CSS-Variablen in styles.css.
+ * Der Raum ist der Laden am Abend: dunkle Fliesen, gebürsteter Stahl,
+ * warmes Licht von oben. Die Marke setzt Akzente, sie flutet nicht die Fläche.
+ */
 export const PALETTE = {
   ink: '#12100e',
   red: '#d91f26',
-  redDark: '#a8161c',
+  redBright: '#f0323a',
+  redDark: '#8f1116',
   yellow: '#ffdd00',
   yellowDark: '#f5c400',
   paper: '#ffffff',
   cream: '#fff6dc',
-  steel: '#c9ced4',
-  steelDark: '#5f656c',
-  oil: '#3d2b16',
-  oilDark: '#2a1d0f',
+
+  // Raum
+  room: '#191512',
+  roomDeep: '#0e0c0b',
+  tile: '#221d19',
+  tileLight: '#2c2621',
+  grout: '#15110f',
+  steel: '#9aa0a6',
+  steelMid: '#6b7076',
+  steelDark: '#3a3d41',
+
+  // Ware
+  oil: '#4a3316',
+  oilDark: '#2e1f0d',
   raw: '#f4e0b4',
-  golden: '#eda52f',
+  golden: '#e6a233',
   deep: '#b4651a',
   burnt: '#2f2620',
   green: '#43a047',
@@ -398,13 +413,17 @@ export default class GameBase {
   drawPopups(ctx) {
     ctx.textAlign = 'center';
     for (const popup of this.popups) {
+      ctx.save();
       ctx.globalAlpha = Math.min(1, popup.life * 2.4);
       ctx.font = `italic 900 ${20 * popup.size}px 'Arial Black', 'Segoe UI', Impact, sans-serif`;
-      ctx.lineWidth = 5;
-      ctx.strokeStyle = PALETTE.ink;
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0,0,0,0.75)';
       ctx.strokeText(popup.text, popup.x, popup.y);
+      ctx.shadowColor = popup.color;
+      ctx.shadowBlur = 14;
       ctx.fillStyle = popup.color;
       ctx.fillText(popup.text, popup.x, popup.y);
+      ctx.restore();
     }
     ctx.globalAlpha = 1;
     ctx.textAlign = 'start';
@@ -429,34 +448,74 @@ export default class GameBase {
     ctx.closePath();
   }
 
-  /** Hintergrund, den sich alle Modi teilen: Edelstahl über Markengelb. */
+  /**
+   * Hintergrund, den sich alle Modi teilen: der Laden von hinten gesehen –
+   * gefliste Wand, Karo-Bordüre, Edelstahltresen, warmes Licht von oben.
+   */
   drawKitchen(ctx, wallHeight = 96) {
-    ctx.fillStyle = PALETTE.yellow;
+    // Tresen
+    const counter = ctx.createLinearGradient(0, wallHeight, 0, this.vh);
+    counter.addColorStop(0, PALETTE.room);
+    counter.addColorStop(0.5, '#151210');
+    counter.addColorStop(1, PALETTE.roomDeep);
+    ctx.fillStyle = counter;
     ctx.fillRect(0, 0, this.vw, this.vh);
 
-    ctx.fillStyle = PALETTE.steel;
+    // Gefliste Wand
+    const tileWidth = 34;
+    const tileHeight = 22;
+    ctx.fillStyle = PALETTE.grout;
     ctx.fillRect(0, 0, this.vw, wallHeight);
-    ctx.strokeStyle = 'rgba(0,0,0,0.10)';
-    ctx.lineWidth = 2;
-    for (let y = 12; y < wallHeight; y += 14) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(this.vw, y);
-      ctx.stroke();
+    for (let row = 0, y = 0; y < wallHeight; row += 1, y += tileHeight) {
+      const offset = row % 2 === 0 ? 0 : -tileWidth / 2;
+      for (let x = offset; x < this.vw; x += tileWidth) {
+        const shade = (row + Math.round(x / tileWidth)) % 3 === 0 ? PALETTE.tileLight : PALETTE.tile;
+        ctx.fillStyle = shade;
+        ctx.fillRect(x + 1, y + 1, tileWidth - 2, tileHeight - 2);
+      }
     }
 
-    const tile = 12;
-    for (let x = 0, column = 0; x < this.vw; x += tile, column += 1) {
-      ctx.fillStyle = column % 2 === 0 ? PALETTE.red : PALETTE.paper;
-      ctx.fillRect(x, wallHeight, tile, tile);
+    // Lichtkegel der Wärmelampe
+    const spot = ctx.createRadialGradient(this.vw / 2, -30, 10, this.vw / 2, wallHeight, this.vw * 0.9);
+    spot.addColorStop(0, 'rgba(255, 208, 130, 0.30)');
+    spot.addColorStop(1, 'rgba(255, 208, 130, 0)');
+    ctx.fillStyle = spot;
+    ctx.fillRect(0, 0, this.vw, this.vh * 0.7);
+
+    // Karo-Bordüre als Marken-Zitat
+    const check = 11;
+    for (let x = 0, column = 0; x < this.vw; x += check, column += 1) {
+      ctx.fillStyle = column % 2 === 0 ? PALETTE.red : '#f2ece1';
+      ctx.fillRect(x, wallHeight, check, check);
     }
-    ctx.fillStyle = PALETTE.ink;
-    ctx.fillRect(0, wallHeight - 3, this.vw, 3);
-    ctx.fillRect(0, wallHeight + tile, this.vw, 3);
+
+    // Stahlkante des Tresens
+    const edge = ctx.createLinearGradient(0, wallHeight + check, 0, wallHeight + check + 12);
+    edge.addColorStop(0, PALETTE.steel);
+    edge.addColorStop(0.4, PALETTE.steelMid);
+    edge.addColorStop(1, PALETTE.steelDark);
+    ctx.fillStyle = edge;
+    ctx.fillRect(0, wallHeight + check, this.vw, 12);
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(0, wallHeight + check, this.vw, 2);
+
+    // Abdunkelung zu den Rändern, damit die Mitte im Licht steht
+    const vignette = ctx.createRadialGradient(
+      this.vw / 2,
+      this.vh * 0.45,
+      this.vw * 0.3,
+      this.vw / 2,
+      this.vh * 0.45,
+      this.vw * 0.95,
+    );
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, this.vw, this.vh);
   }
 
   /** Zentrierter Text im Marken-Stil. */
-  label(ctx, text, x, y, { size = 20, fill = PALETTE.ink, stroke = null, width = 5 } = {}) {
+  label(ctx, text, x, y, { size = 20, fill = PALETTE.cream, stroke = null, width = 4, glow = null } = {}) {
     ctx.save();
     ctx.textAlign = 'center';
     ctx.font = `italic 900 ${size}px 'Arial Black', 'Segoe UI', Impact, sans-serif`;
@@ -464,6 +523,10 @@ export default class GameBase {
       ctx.lineWidth = width;
       ctx.strokeStyle = stroke;
       ctx.strokeText(text, x, y);
+    }
+    if (glow) {
+      ctx.shadowColor = glow;
+      ctx.shadowBlur = 16;
     }
     ctx.fillStyle = fill;
     ctx.fillText(text, x, y);
