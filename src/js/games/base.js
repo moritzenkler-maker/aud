@@ -431,9 +431,69 @@ export default class GameBase {
 
   /* ------------------------------------------------------------ Helfer */
 
+  /** Absetzende Kante – dunkel und halbtransparent statt harter Kontur. */
   outline(ctx, width = 3) {
-    ctx.strokeStyle = PALETTE.ink;
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = width;
+    ctx.stroke();
+  }
+
+  /** Warmes Papier: Bons, Bestellzettel, Etiketten. */
+  paperPanel(ctx, x, y, width, height, radius = 10) {
+    const paper = ctx.createLinearGradient(0, y, 0, y + height);
+    paper.addColorStop(0, '#fbf7ee');
+    paper.addColorStop(1, '#e6dfd0');
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 6;
+    ctx.fillStyle = paper;
+    this.roundedRect(ctx, x, y, width, height, radius);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  /** Gebürsteter Edelstahl: Tresen, Bänder, Rahmen. */
+  steelPanel(ctx, x, y, width, height, radius = 10) {
+    const metal = ctx.createLinearGradient(0, y, 0, y + height);
+    metal.addColorStop(0, PALETTE.steel);
+    metal.addColorStop(0.18, PALETTE.steelMid);
+    metal.addColorStop(0.8, PALETTE.steelDark);
+    metal.addColorStop(1, '#25272a');
+    ctx.fillStyle = metal;
+    this.roundedRect(ctx, x, y, width, height, radius);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Glanzkante oben
+    ctx.save();
+    this.roundedRect(ctx, x, y, width, height, radius);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(x, y, width, 2);
+    ctx.restore();
+  }
+
+  /** Dunkle Ablage mit Stahlkante – für Kacheln, Kisten und Tasten. */
+  shelfPanel(ctx, x, y, width, height, radius = 12, highlight = false) {
+    const surface = ctx.createLinearGradient(0, y, 0, y + height);
+    if (highlight) {
+      surface.addColorStop(0, '#5a4a1c');
+      surface.addColorStop(1, '#33290f');
+    } else {
+      surface.addColorStop(0, '#2a2622');
+      surface.addColorStop(1, '#171512');
+    }
+    ctx.fillStyle = surface;
+    this.roundedRect(ctx, x, y, width, height, radius);
+    ctx.fill();
+    ctx.strokeStyle = highlight ? 'rgba(255,221,0,0.55)' : 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
 

@@ -130,10 +130,7 @@ export default class RegisterGame extends GameBase {
     const bonWidth = this.vw - 60;
     const bonHeight = this.vh * 0.24;
 
-    ctx.fillStyle = PALETTE.paper;
-    this.roundedRect(ctx, bonX, bonY, bonWidth, bonHeight, 12);
-    ctx.fill();
-    this.outline(ctx, 3);
+    this.paperPanel(ctx, bonX, bonY, bonWidth, bonHeight, 10);
 
     this.label(ctx, `Summe ${euro(question.total)}`, this.vw / 2, bonY + bonHeight * 0.34, {
       size: 22,
@@ -145,10 +142,10 @@ export default class RegisterGame extends GameBase {
     });
 
     const remaining = Math.max(0, question.timer) / question.maxTimer;
-    ctx.fillStyle = PALETTE.cream;
+    ctx.fillStyle = '#d5cdbb';
     this.roundedRect(ctx, bonX + 16, bonY + bonHeight - 26, bonWidth - 32, 12, 6);
     ctx.fill();
-    this.outline(ctx, 3);
+    this.outline(ctx, 1.5);
     ctx.fillStyle = remaining < 0.3 ? PALETTE.red : PALETTE.yellow;
     this.roundedRect(ctx, bonX + 16, bonY + bonHeight - 26, (bonWidth - 32) * remaining, 12, 6);
     ctx.fill();
@@ -157,13 +154,10 @@ export default class RegisterGame extends GameBase {
 
     for (const [index, option] of this.options.entries()) {
       const active = this.pressed === index && this.pressedTimer > 0;
-      ctx.fillStyle = active ? PALETTE.yellow : PALETTE.paper;
-      this.roundedRect(ctx, option.x, option.y, option.width, option.height, 14);
-      ctx.fill();
-      this.outline(ctx, 3);
+      this.shelfPanel(ctx, option.x, option.y, option.width, option.height, 12, active);
       this.label(ctx, euro(question.answers[index]), option.x + option.width / 2, option.y + option.height / 2 + 8, {
         size: 22,
-        fill: PALETTE.ink,
+        fill: active ? PALETTE.yellow : PALETTE.cream,
       });
     }
   }

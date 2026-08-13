@@ -139,30 +139,52 @@ export default class DipMeterGame extends GameBase {
 
     const { x, y, width, height } = this.bar;
 
-    ctx.fillStyle = PALETTE.paper;
-    this.roundedRect(ctx, x, y, width, height, 12);
+    // Schiene: dunkle Rinne in Stahl
+    this.steelPanel(ctx, x - 6, y - 6, width + 12, height + 12, 14);
+    const track = ctx.createLinearGradient(0, y, 0, y + height);
+    track.addColorStop(0, '#0d0c0b');
+    track.addColorStop(1, '#1e1b18');
+    ctx.fillStyle = track;
+    this.roundedRect(ctx, x, y, width, height, 10);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // Zielzone
-    ctx.fillStyle = PALETTE.yellow;
-    this.roundedRect(ctx, x + width * this.zone.start, y + 4, width * this.zone.width, height - 8, 8);
+    // Zielzone leuchtet
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,221,0,0.7)';
+    ctx.shadowBlur = 18;
+    const zone = ctx.createLinearGradient(0, y + 4, 0, y + height - 4);
+    zone.addColorStop(0, '#fff08a');
+    zone.addColorStop(1, PALETTE.yellowDark);
+    ctx.fillStyle = zone;
+    this.roundedRect(ctx, x + width * this.zone.start, y + 4, width * this.zone.width, height - 8, 7);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.restore();
 
     // Zeiger
     const needleX = x + width * this.needle;
-    ctx.fillStyle = this.locked ? PALETTE.green : PALETTE.red;
-    this.roundedRect(ctx, needleX - 5, y - 12, 10, height + 24, 5);
+    ctx.save();
+    ctx.shadowColor = this.locked ? 'rgba(67,160,71,0.8)' : 'rgba(240,50,58,0.8)';
+    ctx.shadowBlur = 14;
+    const needle = ctx.createLinearGradient(needleX - 5, 0, needleX + 5, 0);
+    needle.addColorStop(0, this.locked ? '#2f7a33' : '#8f1116');
+    needle.addColorStop(0.45, this.locked ? '#6fd075' : '#ff5a61');
+    needle.addColorStop(1, this.locked ? '#2f7a33' : '#8f1116');
+    ctx.fillStyle = needle;
+    this.roundedRect(ctx, needleX - 4, y - 14, 8, height + 28, 4);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.restore();
 
     // Restzeit für den aktuellen Versuch
     const remaining = Math.max(0, this.shotClock) / (this.maxShotClock ?? 6);
-    ctx.fillStyle = PALETTE.paper;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
     this.roundedRect(ctx, x, y + height + 18, width, 10, 5);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
     ctx.fillStyle = remaining < 0.3 ? PALETTE.red : PALETTE.yellow;
     this.roundedRect(ctx, x, y + height + 18, width * remaining, 10, 5);
     ctx.fill();

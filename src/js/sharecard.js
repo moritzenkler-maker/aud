@@ -13,24 +13,34 @@ const HEIGHT = 1920;
 const COLOR = {
   ink: '#12100e',
   red: '#d91f26',
+  redBright: '#f0323a',
+  redDark: '#8f1116',
   yellow: '#ffdd00',
+  yellowWarm: '#f5c400',
   paper: '#ffffff',
+  cream: '#f6f0e6',
+  muted: '#a89c8c',
   brown: '#c47a33',
   beak: '#f5c400',
+  surface: '#1f1c19',
+  surfaceDeep: '#100e0d',
 };
 
 const DISPLAY = "'Arial Black', 'Segoe UI', Impact, sans-serif";
 
-function outlinedText(ctx, text, x, y, { size, fill, stroke = COLOR.ink, width = 12, align = 'center' }) {
+/** Leuchtschrift, wie sie über dem Tresen hängt. */
+function neonText(ctx, text, x, y, { size, fill, glow, blur = 28, align = 'center', weight = '900' }) {
   ctx.save();
   ctx.textAlign = align;
-  ctx.font = `italic 900 ${size}px ${DISPLAY}`;
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = width;
-  ctx.strokeStyle = stroke;
-  ctx.strokeText(text, x, y);
+  ctx.font = `italic ${weight} ${size}px ${DISPLAY}`;
+  if (glow) {
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = blur;
+  }
   ctx.fillStyle = fill;
   ctx.fillText(text, x, y);
+  // Zweiter Durchgang verdichtet den Schein
+  if (glow) ctx.fillText(text, x, y);
   ctx.restore();
 }
 
@@ -127,84 +137,129 @@ export function renderShareCard(stats) {
   canvas.height = HEIGHT;
   const ctx = canvas.getContext('2d');
 
-  ctx.fillStyle = COLOR.yellow;
+  // Raum: dunkler Tresen mit warmem Spot von oben
+  const room = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+  room.addColorStop(0, '#241a15');
+  room.addColorStop(0.45, COLOR.surfaceDeep);
+  room.addColorStop(1, '#0a0908');
+  ctx.fillStyle = room;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-  checkerStrip(ctx, 0, 56);
-  checkerStrip(ctx, HEIGHT - 56, 56);
 
-  badge(ctx, WIDTH / 2, 330, 150);
+  const spot = ctx.createRadialGradient(WIDTH / 2, 120, 40, WIDTH / 2, 700, 1100);
+  spot.addColorStop(0, 'rgba(255, 198, 110, 0.28)');
+  spot.addColorStop(1, 'rgba(255, 198, 110, 0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  outlinedText(ctx, 'LOCO FRYER', WIDTH / 2, 580, { size: 96, fill: COLOR.red, width: 14 });
+  checkerStrip(ctx, 0, 44);
+  checkerStrip(ctx, HEIGHT - 44, 44);
+
+  badge(ctx, WIDTH / 2, 330, 140);
+  neonText(ctx, 'LOCO CHICKEN', WIDTH / 2, 540, {
+    size: 74,
+    fill: COLOR.cream,
+    glow: 'rgba(255,255,255,0.25)',
+    blur: 16,
+  });
+  neonText(ctx, stats.mode.toUpperCase(), WIDTH / 2, 626, {
+    size: 58,
+    fill: COLOR.yellow,
+    glow: 'rgba(255,221,0,0.55)',
+  });
 
   if (stats.isRecord) {
+    const badgeWidth = 460;
+    const badgeY = 690;
+    const plate = ctx.createLinearGradient(0, badgeY, 0, badgeY + 76);
+    plate.addColorStop(0, COLOR.redBright);
+    plate.addColorStop(1, COLOR.redDark);
     ctx.save();
-    ctx.translate(WIDTH / 2, 648);
-    ctx.rotate(-0.04);
-    ctx.fillStyle = COLOR.red;
-    ctx.fillRect(-260, -42, 520, 84);
-    ctx.strokeStyle = COLOR.ink;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(-260, -42, 520, 84);
-    outlinedText(ctx, 'NEUER REKORD', 0, 22, { size: 52, fill: COLOR.yellow, width: 9 });
+    ctx.shadowColor = 'rgba(240,50,58,0.6)';
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = plate;
+    ctx.beginPath();
+    ctx.roundRect?.((WIDTH - badgeWidth) / 2, badgeY, badgeWidth, 76, 38);
+    if (!ctx.roundRect) ctx.rect((WIDTH - badgeWidth) / 2, badgeY, badgeWidth, 76);
+    ctx.fill();
     ctx.restore();
+    neonText(ctx, 'NEUER REKORD', WIDTH / 2, badgeY + 54, { size: 44, fill: '#fff' });
   }
 
-  // Punktestand als Hauptmotiv
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.font = `italic 900 260px ${DISPLAY}`;
-  ctx.fillStyle = COLOR.red;
-  ctx.fillText(stats.score.toLocaleString('de-DE'), WIDTH / 2 + 14, 950);
-  ctx.restore();
-  outlinedText(ctx, stats.score.toLocaleString('de-DE'), WIDTH / 2, 936, {
-    size: 260,
+  // Punktestand als Leuchtziffer
+  neonText(ctx, stats.score.toLocaleString('de-DE'), WIDTH / 2, 940, {
+    size: 250,
     fill: COLOR.yellow,
-    width: 22,
+    glow: 'rgba(255,190,40,0.65)',
+    blur: 48,
   });
-  outlinedText(ctx, 'PUNKTE', WIDTH / 2, 1020, { size: 58, fill: COLOR.paper, width: 12 });
+  neonText(ctx, 'PUNKTE', WIDTH / 2, 1014, { size: 46, fill: COLOR.muted, glow: null });
 
-  // Kennzahlen
-  const stats3 = [
+  // Kennzahlen auf dunklen Tafeln
+  const tiles = [
     { label: 'PERFEKT', value: String(stats.perfects) },
     { label: 'COMBO', value: `x${stats.bestCombo}` },
-    { label: 'SERIE', value: `${stats.streak} 🔥` },
+    { label: 'SERIE', value: `${stats.streak}` },
   ];
-  const boxWidth = 300;
-  const gap = 24;
-  const totalWidth = stats3.length * boxWidth + (stats3.length - 1) * gap;
-  stats3.forEach((item, index) => {
+  const boxWidth = 296;
+  const gap = 26;
+  const totalWidth = tiles.length * boxWidth + (tiles.length - 1) * gap;
+  const boxY = 1090;
+
+  tiles.forEach((item, index) => {
     const x = (WIDTH - totalWidth) / 2 + index * (boxWidth + gap);
-    ctx.fillStyle = COLOR.paper;
-    ctx.fillRect(x, 1110, boxWidth, 190);
-    ctx.strokeStyle = COLOR.ink;
-    ctx.lineWidth = 8;
-    ctx.strokeRect(x, 1110, boxWidth, 190);
-    outlinedText(ctx, item.value, x + boxWidth / 2, 1220, { size: 76, fill: COLOR.red, width: 10 });
+    const surface = ctx.createLinearGradient(0, boxY, 0, boxY + 190);
+    surface.addColorStop(0, '#2b2723');
+    surface.addColorStop(1, '#151311');
+    ctx.fillStyle = surface;
+    ctx.beginPath();
+    ctx.roundRect?.(x, boxY, boxWidth, 190, 22);
+    if (!ctx.roundRect) ctx.rect(x, boxY, boxWidth, 190);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    neonText(ctx, item.value, x + boxWidth / 2, boxY + 112, {
+      size: 74,
+      fill: COLOR.yellow,
+      glow: 'rgba(255,221,0,0.4)',
+      blur: 18,
+    });
     ctx.save();
     ctx.textAlign = 'center';
-    ctx.font = `800 30px 'Segoe UI', system-ui, sans-serif`;
-    ctx.fillStyle = COLOR.ink;
-    ctx.fillText(item.label, x + boxWidth / 2, 1268);
+    ctx.font = `800 28px 'Segoe UI', system-ui, sans-serif`;
+    ctx.fillStyle = COLOR.muted;
+    ctx.fillText(item.label, x + boxWidth / 2, boxY + 156);
     ctx.restore();
   });
 
-  // Rang
-  ctx.fillStyle = COLOR.ink;
-  ctx.fillRect(120, 1330, WIDTH - 240, 130);
-  outlinedText(ctx, stats.rank.toUpperCase(), WIDTH / 2, 1418, {
-    size: 66,
-    fill: COLOR.yellow,
-    stroke: COLOR.ink,
-    width: 6,
-  });
+  // Rang auf einem Schild aus Stahl
+  const rankY = 1350;
+  const steel = ctx.createLinearGradient(0, rankY, 0, rankY + 120);
+  steel.addColorStop(0, '#7c8085');
+  steel.addColorStop(0.2, '#54585c');
+  steel.addColorStop(1, '#2a2c2f');
+  ctx.fillStyle = steel;
+  ctx.beginPath();
+  ctx.roundRect?.(130, rankY, WIDTH - 260, 120, 18);
+  if (!ctx.roundRect) ctx.rect(130, rankY, WIDTH - 260, 120);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  neonText(ctx, stats.rank.toUpperCase(), WIDTH / 2, rankY + 80, { size: 58, fill: '#fdf8ee', glow: null });
 
-  outlinedText(ctx, 'SCHAFFST DU MEHR?', WIDTH / 2, 1620, { size: 72, fill: COLOR.paper, width: 14 });
+  neonText(ctx, 'SCHAFFST DU MEHR?', WIDTH / 2, 1610, {
+    size: 66,
+    fill: COLOR.redBright,
+    glow: 'rgba(240,50,58,0.55)',
+  });
 
   ctx.save();
   ctx.textAlign = 'center';
-  ctx.font = `800 42px 'Segoe UI', system-ui, sans-serif`;
-  ctx.fillStyle = COLOR.ink;
-  ctx.fillText('Loco Chicken App · Spiel dir deinen Gutschein', WIDTH / 2, 1710);
+  ctx.font = `700 38px 'Segoe UI', system-ui, sans-serif`;
+  ctx.fillStyle = COLOR.muted;
+  ctx.fillText('Loco Chicken App · Spiel dir deinen Gutschein', WIDTH / 2, 1700);
   ctx.restore();
 
   return canvas;

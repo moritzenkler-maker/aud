@@ -156,11 +156,15 @@ export default class StackGame extends GameBase {
       ctx.fill();
     }
 
-    // Teller
-    ctx.fillStyle = PALETTE.steel;
-    this.roundedRect(ctx, this.vw / 2 - this.baseWidth / 2 - 20, this.baseY + LAYER_HEIGHT - 6, this.baseWidth + 40, 12, 6);
-    ctx.fill();
-    this.outline(ctx, 3);
+    // Teller aus Edelstahl
+    this.steelPanel(
+      ctx,
+      this.vw / 2 - this.baseWidth / 2 - 20,
+      this.baseY + LAYER_HEIGHT - 6,
+      this.baseWidth + 40,
+      12,
+      6,
+    );
 
     for (const [index, layer] of this.layers.entries()) {
       const y = this.layerY(index);
@@ -174,9 +178,29 @@ export default class StackGame extends GameBase {
   }
 
   drawLayer(ctx, layer, y) {
-    ctx.fillStyle = layer.color;
+    // Jede Schicht bekommt Wölbung: hell oben, dunkel unten
+    const body = ctx.createLinearGradient(0, y, 0, y + LAYER_HEIGHT - 4);
+    body.addColorStop(0, this.lighten(layer.color, 32));
+    body.addColorStop(0.5, layer.color);
+    body.addColorStop(1, this.lighten(layer.color, -38));
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = body;
     this.roundedRect(ctx, layer.x - layer.width / 2, y, layer.width, LAYER_HEIGHT - 4, 8);
     ctx.fill();
-    this.outline(ctx, 3);
+    ctx.restore();
+    this.outline(ctx, 2);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    this.roundedRect(ctx, layer.x - layer.width / 2 + 6, y + 3, Math.max(0, layer.width - 12), 3, 2);
+    ctx.fill();
+  }
+
+  /** Hellt eine Hex-Farbe auf oder dunkelt sie ab. */
+  lighten(hex, amount) {
+    const value = (offset) => Math.max(0, Math.min(255, parseInt(hex.slice(offset, offset + 2), 16) + amount));
+    return `rgb(${value(1)},${value(3)},${value(5)})`;
   }
 }

@@ -109,13 +109,18 @@ export default class BeltGame extends GameBase {
 
     const top = this.beltY - this.beltHeight / 2;
 
-    ctx.fillStyle = PALETTE.steelDark;
-    this.roundedRect(ctx, -10, top, this.vw + 20, this.beltHeight, 10);
-    ctx.fill();
-    this.outline(ctx, 3);
+    this.steelPanel(ctx, -10, top, this.vw + 20, this.beltHeight, 10);
+
+    // Gummiauflage in der Mitte
+    const rubber = ctx.createLinearGradient(0, top + 8, 0, top + this.beltHeight - 8);
+    rubber.addColorStop(0, '#2b2825');
+    rubber.addColorStop(0.5, '#1c1a18');
+    rubber.addColorStop(1, '#111010');
+    ctx.fillStyle = rubber;
+    ctx.fillRect(-10, top + 8, this.vw + 20, this.beltHeight - 16);
 
     // Laufende Bandstruktur
-    ctx.strokeStyle = 'rgba(255,255,255,0.16)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
     ctx.lineWidth = 6;
     for (let x = -28 + (28 - this.beltOffset); x < this.vw + 28; x += 28) {
       ctx.beginPath();
@@ -124,17 +129,28 @@ export default class BeltGame extends GameBase {
       ctx.stroke();
     }
 
-    // Abgreif-Marke
+    // Abgreif-Marke als Lichtfeld auf dem Band
+    ctx.save();
+    ctx.globalAlpha = 0.22;
     ctx.fillStyle = PALETTE.yellow;
     this.roundedRect(ctx, this.markerX - 30, top - 10, 60, this.beltHeight + 20, 12);
     ctx.fill();
-    this.outline(ctx, 3);
-    ctx.strokeStyle = PALETTE.red;
-    ctx.lineWidth = 4;
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,221,0,0.85)';
+    ctx.lineWidth = 2;
+    this.roundedRect(ctx, this.markerX - 30, top - 10, 60, this.beltHeight + 20, 12);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(240,50,58,0.9)';
+    ctx.shadowBlur = 12;
+    ctx.strokeStyle = PALETTE.redBright;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(this.markerX, top - 6);
     ctx.lineTo(this.markerX, top + this.beltHeight + 6);
     ctx.stroke();
+    ctx.restore();
 
     for (const item of this.items) {
       if (item.x < -40 || item.x > this.vw + 40) continue;

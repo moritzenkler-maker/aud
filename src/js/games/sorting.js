@@ -11,8 +11,8 @@ import { PRODUCTS, PRODUCT_IDS, randomProduct } from '../brand.js';
 import { drawFood } from './icons.js';
 
 const BINS = {
-  chicken: { label: 'CHICKEN', color: PALETTE.deep },
-  side: { label: 'SIDES', color: PALETTE.yellow },
+  chicken: { label: 'CHICKEN', color: PALETTE.deep, shade: '#7a4310' },
+  side: { label: 'SIDES', color: PALETTE.yellow, shade: '#c9a200' },
 };
 
 export default class SortingGame extends GameBase {
@@ -133,16 +133,24 @@ export default class SortingGame extends GameBase {
     const bin = BINS[group];
     const active = this.flashSide === group && this.flashTimer > 0;
 
-    ctx.fillStyle = active ? PALETTE.paper : bin.color;
-    this.roundedRect(ctx, x + 8, this.binTop, width - 16, this.binHeight, 14);
-    ctx.fill();
-    this.outline(ctx, 3);
+    // Kiste aus Stahl, darauf ein farbiges Schild
+    this.steelPanel(ctx, x + 8, this.binTop, width - 16, this.binHeight, 14);
 
-    this.label(ctx, bin.label, x + width / 2, this.binTop + this.binHeight / 2 + 8, {
-      size: 22,
-      fill: group === 'chicken' ? PALETTE.paper : PALETTE.ink,
-      stroke: group === 'chicken' ? PALETTE.ink : null,
-      width: 4,
+    const plateWidth = width - 48;
+    const plateHeight = 34;
+    const plateX = x + 24;
+    const plateY = this.binTop + this.binHeight / 2 - plateHeight / 2;
+    const plate = ctx.createLinearGradient(0, plateY, 0, plateY + plateHeight);
+    plate.addColorStop(0, active ? '#ffffff' : bin.color);
+    plate.addColorStop(1, active ? '#d8d2c6' : bin.shade);
+    ctx.fillStyle = plate;
+    this.roundedRect(ctx, plateX, plateY, plateWidth, plateHeight, 8);
+    ctx.fill();
+    this.outline(ctx, 2);
+
+    this.label(ctx, bin.label, x + width / 2, plateY + plateHeight / 2 + 7, {
+      size: 19,
+      fill: group === 'chicken' ? '#fff5e2' : '#2a2008',
     });
   }
 }

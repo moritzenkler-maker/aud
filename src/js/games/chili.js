@@ -107,17 +107,27 @@ export default class ChiliGame extends GameBase {
       fill: PALETTE.cream,
     });
 
-    ctx.fillStyle = PALETTE.steelDark;
-    this.roundedRect(ctx, this.board.x - 10, this.board.y - 10, this.board.width + 20, this.board.height + 20, 18);
-    ctx.fill();
-    this.outline(ctx, 4);
+    this.steelPanel(ctx, this.board.x - 10, this.board.y - 10, this.board.width + 20, this.board.height + 20, 18);
 
     for (const [index, position] of this.holePositions.entries()) {
-      ctx.fillStyle = PALETTE.oilDark;
+      // Vertiefung: dunkel in der Mitte, heller Rand als Materialkante
+      const well = ctx.createRadialGradient(
+        position.x,
+        position.y - this.holeRadius * 0.3,
+        this.holeRadius * 0.15,
+        position.x,
+        position.y,
+        this.holeRadius,
+      );
+      well.addColorStop(0, '#151210');
+      well.addColorStop(1, '#050404');
+      ctx.fillStyle = well;
       ctx.beginPath();
       ctx.ellipse(position.x, position.y, this.holeRadius, this.holeRadius * 0.78, 0, 0, Math.PI * 2);
       ctx.fill();
-      this.outline(ctx, 3);
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
       const entry = this.holes[index];
       if (!entry) continue;

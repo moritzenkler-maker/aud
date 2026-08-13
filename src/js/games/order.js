@@ -152,10 +152,7 @@ export default class OrderGame extends GameBase {
     const x = 40;
     const y = 130;
 
-    ctx.fillStyle = PALETTE.paper;
-    this.roundedRect(ctx, x, y, width, height, 12);
-    ctx.fill();
-    this.outline(ctx, 3);
+    this.paperPanel(ctx, x, y, width, height, 12);
 
     if (this.phase === 'show') {
       const current = this.sequence[this.showIndex];
@@ -175,19 +172,19 @@ export default class OrderGame extends GameBase {
     const totalWidth = this.sequence.length * dotSize + (this.sequence.length - 1) * gap;
     for (let index = 0; index < this.sequence.length; index += 1) {
       const dotX = this.vw / 2 - totalWidth / 2 + index * (dotSize + gap) + dotSize / 2;
-      ctx.fillStyle = index < this.inputIndex ? PALETTE.red : PALETTE.cream;
+      ctx.fillStyle = index < this.inputIndex ? PALETTE.red : '#cfc7b6';
       ctx.beginPath();
       ctx.arc(dotX, y + height / 2 - 10, dotSize / 2, 0, Math.PI * 2);
       ctx.fill();
-      this.outline(ctx, 3);
+      this.outline(ctx, 1.5);
     }
 
     const barWidth = width - 40;
     const remaining = Math.max(0, this.inputTimer) / (1.4 + this.sequence.length * 0.95);
-    ctx.fillStyle = PALETTE.cream;
+    ctx.fillStyle = '#d5cdbb';
     this.roundedRect(ctx, x + 20, y + height - 34, barWidth, 12, 6);
     ctx.fill();
-    this.outline(ctx, 3);
+    this.outline(ctx, 1.5);
     ctx.fillStyle = remaining < 0.3 ? PALETTE.red : PALETTE.yellow;
     this.roundedRect(ctx, x + 20, y + height - 34, barWidth * remaining, 12, 6);
     ctx.fill();
@@ -196,10 +193,15 @@ export default class OrderGame extends GameBase {
   drawTiles(ctx) {
     for (const tile of this.tiles) {
       const active = this.pressed === tile.id && this.pressedTimer > 0;
-      ctx.fillStyle = active ? PALETTE.yellow : PALETTE.paper;
-      this.roundedRect(ctx, tile.x - this.tileSize / 2, tile.y - this.tileSize / 2, this.tileSize, this.tileSize, 14);
-      ctx.fill();
-      this.outline(ctx, 3);
+      this.shelfPanel(
+        ctx,
+        tile.x - this.tileSize / 2,
+        tile.y - this.tileSize / 2,
+        this.tileSize,
+        this.tileSize,
+        14,
+        active,
+      );
       drawFood(ctx, tile.id, tile.x, tile.y, this.tileSize * 0.62);
     }
   }

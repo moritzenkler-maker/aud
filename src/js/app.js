@@ -511,6 +511,7 @@ function disarmReset() {
 async function openShare() {
   if (!lastRun) return;
   shareCanvas = renderShareCard({
+    mode: resolveMode(lastRun.mode ?? currentMode).title,
     score: lastRun.score,
     perfects: lastRun.perfects,
     bestCombo: lastRun.bestCombo,
